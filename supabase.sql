@@ -14,6 +14,9 @@ create table if not exists public.casefiles (
 -- Add, edit or delete files in Supabase → Table Editor instead.
 alter table public.casefiles enable row level security;
 
+-- The project does not expose new tables automatically, so let signed-in members reach this one (rows still filtered by the policy below).
+grant select on public.casefiles to authenticated;
+
 drop policy if exists "members read casefiles" on public.casefiles;
 create policy "members read casefiles" on public.casefiles
   for select to authenticated using (true);
