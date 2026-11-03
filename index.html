@@ -41,6 +41,7 @@ body.is-light { --ink: #111314; --ink-on: #f2f3f1; --dim: #7a8083; --line: rgba(
 body.is-red { --ink: #0a0000; --ink-on: #e8291c; --dim: #5e0b05; --line: rgba(0, 0, 0, .28); --bar-bg: #b81c11; }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -122,8 +123,50 @@ a { color: inherit; text-decoration: none; }
 main { position: relative; z-index: 2; }
 .story {
   display: grid; grid-template-columns: 1fr minmax(160px, 22vw) 1fr;
-  padding-block: 64vh 34vh;
+  padding-block: 0 34vh;
 }
+
+/* hero: the wolf alone, with the access terminal docked under its chin */
+.hero {
+  grid-column: 1 / -1; height: 100vh; height: 100svh;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom, 0px) + 26px);
+}
+.term {
+  position: relative; width: min(430px, 100%); padding: 14px 16px 16px;
+  display: grid; gap: 12px;
+  background: rgba(2, 3, 3, .8); border: 1px solid var(--line);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  font-size: 9.5px; line-height: 1.5;
+}
+.term::before, .term::after { content: ""; position: absolute; width: 10px; height: 10px; border: 1px solid var(--blood); }
+.term::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.term::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+.term .tabs button { flex: 1; padding: 3px 0; border: 0; background: none; color: var(--dim); font-weight: 700; }
+.term .tabs button + button { border-left: 1px solid var(--line); }
+.term .tabs button[aria-pressed="true"] { background: var(--line); color: var(--ink); }
+.term form, #t-out { display: grid; gap: 12px; margin: 0; }
+.field { display: grid; gap: 2px; }
+.field label { color: var(--dim); }
+.field input {
+  width: 100%; padding: 5px 0 6px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: transparent; color: var(--ink); caret-color: var(--blood);
+  font: 600 13px var(--mono); letter-spacing: .02em; text-transform: none; cursor: text;
+}
+.field input:focus { outline: none; border-bottom-color: var(--blood); }
+.field input::placeholder { color: var(--dim); opacity: .6; }
+.term .btn { width: 100%; padding: 2px 10px; }
+.term .btn:disabled { opacity: .5; cursor: wait; }
+.status { min-height: 1.5em; font: 500 9.5px/1.5 var(--mono); color: var(--dim); }
+.status.err { color: var(--blood); }
+.status.ok { color: var(--ink); }
+.linkish { padding: 0; border: 0; background: none; color: var(--dim); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.linkish:hover { color: var(--ink); }
+.term .granted { font: 900 clamp(22px, 3vw, 30px)/1 var(--display); letter-spacing: .04em; }
+.term .who { font: 700 11px var(--mono); text-transform: none; overflow-wrap: anywhere; }
+.term .actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.term .actions .btn { width: auto; }
+.term .ghost { background: none; color: var(--ink); border: 1px solid var(--line); }
 .story h1 {
   grid-column: 1 / -1; justify-self: center; margin: 0 0 4.5em; padding: 2px 10px; text-align: center;
   font: 700 11px/1.6 var(--text); letter-spacing: .14em; color: var(--blood);
@@ -149,6 +192,16 @@ main { position: relative; z-index: 2; }
 .cases .no, .cases .yr { font: 500 10px var(--mono); }
 .cases .yr { text-align: right; }
 .cases li:hover { background: var(--blood); color: var(--void); }
+
+/* classified: members-only case files, redacted until signed in */
+#classified { padding-block: 0 22vh; }
+.redacted li { cursor: default; }
+.redacted li:hover { background: none; color: inherit; }
+.bars { display: flex; gap: 10px; flex-wrap: wrap; }
+.bars i { display: block; height: clamp(22px, 3.4vw, 44px); background: var(--ink); opacity: .85; }
+.unlock { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 10px; font-size: 9.5px; color: var(--dim); }
+.unlock a { color: var(--blood); }
+.cl .note { grid-column: 2 / -1; color: var(--dim); font-size: 9.5px; line-height: 1.6; text-transform: none; }
 
 /* profile: pinned white specimen sheet */
 #profile { position: relative; z-index: 2; height: 360vh; }
@@ -297,7 +350,8 @@ body.is-red .crt { opacity: .6; animation: none; }
 @media (max-width: 899px) {
   .rail { display: none; }
   #wolf { width: min(92vw, 70vh); opacity: .5; }
-  .story { grid-template-columns: 1fr; padding-block: 58vh 24vh; text-align: center; }
+  .story { grid-template-columns: 1fr; padding-block: 0 24vh; text-align: center; }
+  .term { text-align: left; }
   .col-l, .col-r { grid-column: 1; text-align: center; }
   .col-r { margin-top: 1.9em; }
   .cases li { grid-template-columns: 2.4em minmax(0, 1fr) 3em; }
@@ -342,7 +396,7 @@ body.is-red .crt { opacity: .6; animation: none; }
   </div>
   <div class="row coord"><span class="d">LAT</span><span>64°08'51"N</span></div>
   <div class="blk">
-    <div class="row"><span>PROTOCOL<br>WARNING</span><span>HOWL<br><span class="red">SIGNAL LOST</span></span></div>
+    <div class="row"><span>PROTOCOL<br>WARNING</span><span>HOWL<br><span class="red" id="sig">SIGNAL LOST</span></span></div>
     <div class="row"><span>MOON</span><span id="moon">0.00 —</span></div>
     <div class="row"><span>2026</span><span>PACK OF ONE</span></div>
     <div class="prog"><span>000</span><span class="track"><span class="fill" id="fill"></span></span><span>100</span></div>
@@ -370,6 +424,32 @@ body.is-red .crt { opacity: .6; animation: none; }
 
 <main class="gut">
   <section class="story" id="index">
+    <div class="hero">
+      <div class="term" id="term" data-state="out">
+        <div class="row"><span><span class="dot blink"></span>ACCESS TERMINAL</span><span class="d">PACK MEMBERS ONLY</span></div>
+
+        <div id="t-out">
+          <div class="tabs" role="group" aria-label="Access mode">
+            <button type="button" id="mode-in" aria-pressed="true">SIGN IN</button>
+            <button type="button" id="mode-join" aria-pressed="false">JOIN THE PACK</button>
+          </div>
+          <form id="t-form" novalidate>
+            <div class="field"><label for="t-email">CALLSIGN · EMAIL</label><input id="t-email" name="email" type="email" autocomplete="email" placeholder="you@domain.com" required></div>
+            <div class="field"><label for="t-pass">PASSPHRASE</label><input id="t-pass" name="password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="6" required></div>
+            <button class="btn" id="t-go" type="submit">AUTHENTICATE +</button>
+          </form>
+          <div class="row"><button type="button" class="linkish" id="t-reset">FORGOT PASSPHRASE</button><span class="d">ENCRYPTED IN TRANSIT</span></div>
+        </div>
+
+        <div id="t-in" hidden>
+          <div class="granted">ACCESS GRANTED</div>
+          <div class="row" style="margin-block: 10px 12px;"><span class="who" id="t-who"></span><span class="chip">CLEARANCE 07</span></div>
+          <div class="actions"><a class="btn" href="#classified">OPEN CLASSIFIED FILES +</a><button type="button" class="btn ghost" id="t-out-btn">SIGN OUT</button></div>
+        </div>
+
+        <div class="status" id="t-status" role="status" aria-live="polite">AWAITING SIGNAL_</div>
+      </div>
+    </div>
     <h1>CASE FILE 07 · THE ONE THAT KEPT WATCHING</h1>
     <div class="col col-l">
       <span class="line">NOBODY SAW IT ARRIVE.</span>
@@ -428,6 +508,17 @@ body.is-red .crt { opacity: .6; animation: none; }
       <li><span class="no">04</span><span class="name">TERRITORY</span><span class="what">ART DIRECTION</span><span class="yr">2024</span></li>
       <li><span class="no">05</span><span class="name">LOW MOON</span><span class="what">PHOTOGRAPHY</span><span class="yr">2024</span></li>
     </ol>
+  </section>
+
+  <section id="classified">
+    <div class="sec-head"><span>CLASSIFIED · PACK MEMBERS ONLY</span><span class="d" id="cl-count">LOCKED</span></div>
+    <ol class="cases redacted" id="cl-locked" aria-label="Locked files">
+      <li><span class="no">C1</span><span class="bars"><i style="width: 38%"></i><i style="width: 22%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
+      <li><span class="no">C2</span><span class="bars"><i style="width: 54%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
+      <li><span class="no">C3</span><span class="bars"><i style="width: 26%"></i><i style="width: 31%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
+    </ol>
+    <ol class="cases cl" id="cl-list" hidden></ol>
+    <div class="unlock" id="cl-msg"><span>THESE FILES OPEN FOR SIGNED-IN MEMBERS.</span><a href="#index">SIGN IN TO DECLASSIFY +</a></div>
   </section>
 </main>
 
@@ -807,7 +898,172 @@ gsap.timeline({ defaults: { ease: 'none' } })
   .to(boot, { opacity: 0, duration: .05, repeat: calm ? 0 : 3, yoyo: true })
   .to(boot, { clipPath: 'inset(0 0 100% 0)', duration: calm ? .2 : .55, ease: 'power3.in' }) // exits leave fast
   .set(boot, { display: 'none' })
-  .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .7, stagger: .04, ease: 'expo.out' }, '-=.3');
+  .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .7, stagger: .04, ease: 'expo.out' }, '-=.3')
+  .from('#term', { opacity: 0, y: 14, duration: .8, ease: 'expo.out' }, '<.2');
+</script>
+
+<!-- member access: kept in its own module so a Firebase outage never takes the rest of the site down -->
+<script type="module">
+import { animate, stagger, cubicBezier } from 'animejs';
+
+// Paste your web app config from Firebase console → Project settings → Your apps → SDK setup (Config).
+// These values are public by design; access is enforced by Firebase Auth and the rules in firestore.rules.
+const FIREBASE_CONFIG = null;
+const SDK = 'https://www.gstatic.com/firebasejs/11.0.2';
+
+const $ = (s) => document.querySelector(s);
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const easeOut = cubicBezier(.16, 1, .3, 1);
+const term = $('#term'), form = $('#t-form'), email = $('#t-email'), pass = $('#t-pass');
+const go = $('#t-go'), status = $('#t-status');
+let mode = 'in', fb = null;
+
+const GLYPHS = '01<>/\\#%_=+X';
+function say(text, kind = '') {
+  status.className = `status ${kind}`;
+  if (calm) { status.textContent = text; return; }
+  const o = { p: 0 };
+  animate(o, {
+    p: 1, duration: Math.min(700, 120 + text.length * 14), ease: 'linear',
+    onUpdate: () => {
+      const n = Math.floor(o.p * text.length);
+      status.textContent = text.slice(0, n) + [...text.slice(n)].map((c) => (c === ' ' ? ' ' : GLYPHS[Math.random() * GLYPHS.length | 0])).join('');
+    },
+    onComplete: () => { status.textContent = text; },
+  });
+}
+const shake = () => { if (!calm) animate(term, { translateX: [0, -7, 6, -4, 3, 0], duration: 380, ease: 'out(2)' }); };
+
+const MESSAGES = {
+  'auth/invalid-credential': 'WRONG CALLSIGN OR PASSPHRASE.',
+  'auth/wrong-password': 'WRONG CALLSIGN OR PASSPHRASE.',
+  'auth/user-not-found': 'WRONG CALLSIGN OR PASSPHRASE.',
+  'auth/invalid-email': 'THAT EMAIL LOOKS WRONG. CHECK IT AND TRY AGAIN.',
+  'auth/missing-password': 'ENTER YOUR PASSPHRASE.',
+  'auth/email-already-in-use': 'THAT CALLSIGN IS ALREADY IN THE PACK. SIGN IN INSTEAD.',
+  'auth/weak-password': 'PASSPHRASE NEEDS AT LEAST 6 CHARACTERS.',
+  'auth/too-many-requests': 'TOO MANY TRIES. WAIT A MINUTE, THEN TRY AGAIN.',
+  'auth/network-request-failed': 'NO SIGNAL. CHECK YOUR CONNECTION AND TRY AGAIN.',
+  'auth/operation-not-allowed': 'EMAIL SIGN-IN IS SWITCHED OFF IN FIREBASE. THE OWNER NEEDS TO ENABLE IT.',
+  'auth/unauthorized-domain': 'THIS DOMAIN IS NOT ALLOWED IN FIREBASE. THE OWNER NEEDS TO ADD IT.',
+  'auth/invalid-api-key': "FIREBASE REJECTED THIS SITE'S KEY. THE OWNER NEEDS TO CHECK FIREBASE_CONFIG.",
+  'auth/api-key-not-valid.-please-pass-a-valid-api-key.': "FIREBASE REJECTED THIS SITE'S KEY. THE OWNER NEEDS TO CHECK FIREBASE_CONFIG.",
+};
+const explain = (e) => MESSAGES[e?.code] ?? `SOMETHING FAILED (${e?.code ?? 'UNKNOWN'}). TRY AGAIN.`;
+
+function setMode(next) {
+  mode = next;
+  $('#mode-in').setAttribute('aria-pressed', String(mode === 'in'));
+  $('#mode-join').setAttribute('aria-pressed', String(mode === 'join'));
+  pass.autocomplete = mode === 'in' ? 'current-password' : 'new-password';
+  go.textContent = mode === 'in' ? 'AUTHENTICATE +' : 'JOIN THE PACK +';
+  say(mode === 'in' ? 'AWAITING SIGNAL_' : 'NEW MEMBER. PICK A PASSPHRASE OF 6+ CHARACTERS.');
+}
+$('#mode-in').addEventListener('click', () => setMode('in'));
+$('#mode-join').addEventListener('click', () => setMode('join'));
+
+async function connect() {
+  if (fb) return fb;
+  if (!FIREBASE_CONFIG) throw Object.assign(new Error('offline'), { code: 'offline' });
+  const [{ initializeApp }, authMod, storeMod] = await Promise.all([
+    import(`${SDK}/firebase-app.js`), import(`${SDK}/firebase-auth.js`), import(`${SDK}/firebase-firestore.js`),
+  ]);
+  const app = initializeApp(FIREBASE_CONFIG);
+  fb = { auth: authMod.getAuth(app), db: storeMod.getFirestore(app), A: authMod, F: storeMod };
+  return fb;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const mail = email.value.trim(), pw = pass.value;
+  if (!mail || !email.checkValidity()) { say('ENTER A VALID EMAIL AS YOUR CALLSIGN.', 'err'); shake(); email.focus(); return; }
+  if (pw.length < 6) { say('PASSPHRASE NEEDS AT LEAST 6 CHARACTERS.', 'err'); shake(); pass.focus(); return; }
+  go.disabled = true;
+  say(mode === 'in' ? 'VERIFYING SIGNAL…' : 'REGISTERING NEW MEMBER…');
+  try {
+    const { auth, A } = await connect();
+    if (mode === 'in') await A.signInWithEmailAndPassword(auth, mail, pw);
+    else await A.createUserWithEmailAndPassword(auth, mail, pw);
+    pass.value = '';
+  } catch (err) {
+    say(err.code === 'offline' ? "TERMINAL OFFLINE. THE SITE OWNER HASN'T CONNECTED FIREBASE YET." : explain(err), 'err');
+    shake();
+  } finally {
+    go.disabled = false;
+  }
+});
+
+$('#t-reset').addEventListener('click', async () => {
+  const mail = email.value.trim();
+  if (!mail || !email.checkValidity()) { say('TYPE YOUR EMAIL ABOVE FIRST, THEN PRESS FORGOT PASSPHRASE.', 'err'); email.focus(); return; }
+  try {
+    const { auth, A } = await connect();
+    await A.sendPasswordResetEmail(auth, mail);
+    say('IF THAT CALLSIGN EXISTS, A RESET LINK IS ON ITS WAY.', 'ok');
+  } catch (err) {
+    say(err.code === 'offline' ? "TERMINAL OFFLINE. THE SITE OWNER HASN'T CONNECTED FIREBASE YET." : explain(err), 'err');
+  }
+});
+
+$('#t-out-btn').addEventListener('click', async () => {
+  const { auth, A } = await connect();
+  await A.signOut(auth);
+  say('SIGNED OUT. THE FILES ARE SEALED AGAIN.');
+});
+
+/* ---------- classified files: read from Firestore, which only answers signed-in members ---------- */
+const locked = $('#cl-locked'), list = $('#cl-list'), msg = $('#cl-msg'), count = $('#cl-count');
+function seal() {
+  list.hidden = true; list.replaceChildren(); locked.hidden = false; count.textContent = 'LOCKED';
+  msg.hidden = false;
+  msg.firstElementChild.textContent = 'THESE FILES OPEN FOR SIGNED-IN MEMBERS.';
+}
+async function declassify() {
+  const { db, F } = fb;
+  count.textContent = 'DECRYPTING…';
+  try {
+    const snap = await F.getDocs(F.query(F.collection(db, 'casefiles'), F.orderBy('no')));
+    const rows = snap.docs.map((d) => d.data());
+    list.replaceChildren(...rows.map((r) => {
+      const li = document.createElement('li');
+      const cell = (cls, text) => Object.assign(document.createElement('span'), { className: cls, textContent: text ?? '' });
+      li.append(cell('no', `C${r.no ?? ''}`), cell('name', r.title), cell('what', r.kind), cell('yr', r.year));
+      if (r.note) li.append(cell('note', r.note));
+      return li;
+    }));
+    locked.hidden = true; list.hidden = false;
+    count.textContent = `${String(rows.length).padStart(2, '0')} FILES · DECLASSIFIED`;
+    msg.hidden = rows.length > 0;
+    if (!rows.length) msg.firstElementChild.textContent = 'NO CLASSIFIED FILES YET. THE OWNER ADDS THEM IN FIRESTORE.';
+    if (!calm && rows.length) animate([...list.children], { opacity: [0, 1], translateX: [-12, 0], duration: 600, delay: stagger(70), ease: easeOut });
+  } catch (err) {
+    count.textContent = 'LOCKED';
+    msg.firstElementChild.textContent = err.code === 'permission-denied'
+      ? 'FIRESTORE REFUSED THE READ. THE OWNER NEEDS TO PUBLISH THE RULES IN FIRESTORE.RULES.'
+      : `COULD NOT LOAD THE FILES (${err.code ?? 'UNKNOWN'}). REFRESH TO TRY AGAIN.`;
+  }
+}
+
+function render(user) {
+  term.dataset.state = user ? 'in' : 'out';
+  $('#t-out').hidden = !!user;
+  $('#t-in').hidden = !user;
+  $('#sig').textContent = user ? 'MEMBER LINKED' : 'SIGNAL LOST';
+  if (user) {
+    $('#t-who').textContent = user.email;
+    say('WELCOME BACK TO THE PACK.', 'ok');
+    if (!calm) animate('#t-in .granted', { opacity: [0, 1], translateY: [8, 0], duration: 700, ease: easeOut });
+    declassify();
+  } else {
+    seal();
+  }
+}
+
+if (FIREBASE_CONFIG) {
+  connect()
+    .then(({ auth, A }) => A.onAuthStateChanged(auth, render))
+    .catch(() => say('NO SIGNAL FROM FIREBASE. REFRESH TO TRY AGAIN.', 'err'));
+}
 </script>
 </body>
 </html>
