@@ -5,20 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wolf Case File</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Wolf: art direction, motion and creative code, after dark.">
+<meta property="og:title" content="Wolf Case File">
+<meta property="og:description" content="Art direction, motion and creative code, after dark.">
+<meta name="theme-color" content="#020303">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e8291c'/%3E%3Cpath d='M10 78 L28 26 L46 78 M54 78 L72 26 L90 78' fill='none' stroke='white' stroke-width='11'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Doto:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: fixed HUD rails left and right, a thermal wolf pinned dead centre, the case file scrolling in two columns around it, a command bar along the bottom. */
+/* Layout: fixed HUD rails left and right, a thermal wolf pinned dead centre, the case file scrolling in two columns around it,
+   then a pinned white profile, a red flood, and a red exit. A command bar runs along the bottom throughout. */
 :root {
   --void: #020303;
   --ink: #e6ecee;
+  --ink-on: #020303;
   --dim: #626b6e;
   --line: rgba(218, 236, 241, .14);
   --grid: rgba(218, 236, 241, .075);
   --blood: #e8291c;
   --paper: #ffffff;
   --bar-bg: #161819;
+  --chalk: #e9eae7;
+  --ash: #b3b8b9;
+  --soot: #0b0b0b;
   --display: 'Doto', 'JetBrains Mono', ui-monospace, monospace;
   --text: 'Chakra Petch', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
@@ -26,22 +36,25 @@
   --bar: 32px;
   color-scheme: dark;
 }
+/* the rails and bar re-ink themselves when they sit over the white and red sections */
+body.is-light { --ink: #111314; --ink-on: #f2f3f1; --dim: #7a8083; --line: rgba(17, 19, 20, .18); --bar-bg: #dcdedb; }
+body.is-red { --ink: #0a0000; --ink-on: #e8291c; --dim: #5e0b05; --line: rgba(0, 0, 0, .28); --bar-bg: #b81c11; }
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
   background: var(--void) radial-gradient(var(--grid) .6px, transparent .9px) 0 0 / 3px 3px;
   color: var(--ink);
   font: 600 11px/1.9 var(--text);
   letter-spacing: .04em;
   text-transform: uppercase;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 ::selection { background: var(--blood); color: var(--paper); }
 a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 1px dashed var(--blood); outline-offset: 3px; }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
 /* boot screen */
 #boot {
@@ -85,7 +98,7 @@ a { color: inherit; text-decoration: none; }
 .mark path { fill: none; stroke: var(--ink); stroke-width: 11; stroke-linecap: square; }
 .row { display: flex; justify-content: space-between; gap: 10px; }
 .row > :last-child { text-align: right; }
-.chip { background: var(--ink); color: var(--void); padding: 0 5px; font: 700 9.5px/1.6 var(--mono); font-variant-numeric: tabular-nums; }
+.chip { background: var(--ink); color: var(--ink-on); padding: 0 5px; font: 700 9.5px/1.6 var(--mono); font-variant-numeric: tabular-nums; }
 .d { color: var(--dim); }
 .red { color: var(--blood); }
 .coord { font: 500 9.5px var(--mono); }
@@ -96,7 +109,7 @@ a { color: inherit; text-decoration: none; }
 .tabs span { flex: 1; text-align: center; padding: 2px 0; color: var(--dim); transition: background .2s steps(2), color .2s steps(2); }
 .tabs span + span { border-left: 1px solid var(--line); }
 .tabs span.on { background: var(--line); color: var(--ink); }
-.log { display: grid; grid-template-columns: auto 1fr auto; column-gap: 14px; }
+.log { display: grid; grid-template-columns: auto 1fr auto; column-gap: 14px; margin: 0; }
 .log dt { grid-column: 1; color: var(--ink); }
 .log dd { margin: 0; display: contents; }
 .log dd span { grid-column: 2; }
@@ -119,11 +132,11 @@ main { position: relative; z-index: 2; }
 .col { display: flex; flex-direction: column; min-width: 0; }
 .col-l { grid-column: 1; text-align: right; }
 .col-r { grid-column: 3; }
-.line { opacity: .22; white-space: pre-wrap; }
+.line { opacity: .32; white-space: pre-wrap; }
 .line.on { opacity: 1; }
 
 /* work */
-#work { padding-block: 16vh 18vh; }
+#work { padding-block: 16vh 22vh; }
 .sec-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 9.5px; }
 .cases { list-style: none; margin: 0; padding: 0; }
 .cases li {
@@ -136,16 +149,97 @@ main { position: relative; z-index: 2; }
 .cases .yr { text-align: right; }
 .cases li:hover { background: var(--blood); color: var(--void); }
 
-/* contact */
-#contact { padding-block: 14vh calc(var(--bar) + 12vh); text-align: center; display: grid; gap: 22px; justify-items: center; }
-#contact h2 { margin: 0; font: 900 clamp(48px, 11vw, 160px)/.9 var(--display); color: var(--ink); text-wrap: balance; }
-#contact h2 em { font-style: normal; color: var(--blood); }
-.mail { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.mail code { font: 700 12px/2 var(--mono); padding: 0 10px; border: 1px solid var(--line); text-transform: none; }
+/* profile: pinned white specimen sheet */
+#profile { position: relative; z-index: 2; height: 360vh; }
+.pin {
+  --open: 1;
+  position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
+  background: var(--chalk); color: var(--soot);
+  clip-path: inset(calc((1 - var(--open)) * 49.6%) 0);
+}
+#terrain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.claws-pos { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
+.claws { display: flex; gap: 3.2vw; transform: rotate(-32deg); }
+.claw {
+  width: 6vw; height: 150vh; background: var(--blood); transform-origin: 50% 0;
+  clip-path: polygon(50% 0, 100% 7%, 100% 90%, 50% 100%, 0 90%, 0 7%);
+}
+.claw:nth-child(2) { margin-top: -8vh; }
+.sil {
+  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto;
+  height: 94%; aspect-ratio: 600 / 700; max-width: 100%; display: block;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, .35));
+}
+.sil .body { fill: var(--paper); }
+.sil .x { stroke: var(--soot); stroke-width: 2; fill: none; }
+.sil .dot { fill: var(--blood); }
+.pl { position: absolute; font-size: 9.5px; line-height: 1.5; }
+.pl.tl { top: calc(14px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); }
+.pl.tr { top: calc(14px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); text-align: right; }
+.pl.h1 { left: calc(50% - min(29vh, 40vw)); top: 30%; text-align: right; transform: translateX(-100%); }
+.pl.h2 { left: calc(50% + min(29vh, 40vw)); top: 26%; }
+.pl.h3 { left: calc(50% + min(31vh, 42vw)); top: 50%; }
+.pl b { font: 700 11px var(--mono); }
+.teeth {
+  position: absolute; left: calc(50% - min(40vh, 44vw)); top: 56%;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  display: flex; align-items: baseline; gap: 10px;
+  font: 900 clamp(56px, 9vw, 150px)/1 var(--display); font-variant-numeric: tabular-nums;
+}
+.teeth small { font: 700 10px var(--text); letter-spacing: .14em; }
+.traits {
+  position: absolute; left: 50%; top: 66%; transform: translateX(-50%);
+  display: grid; grid-template-columns: auto auto; column-gap: 26px;
+  font-size: 9px; line-height: 1.4;
+}
+.traits div { display: flex; flex-direction: column; }
+.traits div:first-child { text-align: right; }
+.barcode {
+  position: absolute; left: calc(50% - 120px); bottom: calc(var(--bar) + 28px); width: 92px; height: 26px;
+  background: repeating-linear-gradient(90deg, var(--soot) 0 2px, transparent 2px 3px, var(--soot) 3px 4px, transparent 4px 7px, var(--soot) 7px 10px, transparent 10px 12px);
+}
+.barcode + span { position: absolute; left: calc(50% - 120px); bottom: calc(var(--bar) + 10px); font-size: 8.5px; }
+.flood { position: absolute; left: 0; right: 0; bottom: 0; height: 118%; display: flex; flex-direction: column; transform: translateY(105%); }
+.flood svg { width: 100%; height: 15%; display: block; margin-bottom: -1px; }
+.flood .fill { flex: 1; }
+.flood-black path { fill: var(--soot); }
+.flood-black .fill { background: var(--soot); }
+.flood-red path { fill: var(--blood); }
+.flood-red .fill { background: var(--blood); }
+
+/* exit: red footer */
+#exit {
+  position: relative; z-index: 2;
+  background: var(--blood) radial-gradient(rgba(0, 0, 0, .13) .7px, transparent 1px) 0 0 / 4px 4px;
+  color: var(--soot);
+  padding-block: 9vh calc(var(--bar) + env(safe-area-inset-bottom, 0px) + 20px);
+  display: grid; gap: 28px;
+}
+#exit h2 { margin: 0; text-align: center; font: 700 clamp(44px, 9vw, 150px)/.9 var(--text); letter-spacing: -.01em; text-wrap: balance; }
+.eyeband { position: relative; height: clamp(150px, 30vh, 320px); background: var(--soot); color: var(--blood); font-size: 9.5px; }
+.eyeband svg { position: absolute; left: 1.5%; top: 14%; width: 97%; height: 72%; }
+#eye { transform-box: fill-box; transform-origin: center; }
+.eyeband .lbl { position: absolute; display: flex; gap: 14px; }
+.eyeband .lbl.tl { top: 8px; left: 12px; }
+.eyeband .lbl.br { bottom: 8px; right: 12px; }
+.eyeband .lbl a::after { content: " +"; }
+.eyeband .lbl .chip { background: var(--blood); color: var(--soot); }
+.exit-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px;
+  padding-top: 14px; border-top: 1px solid rgba(0, 0, 0, .35);
+  font-size: 9.5px; line-height: 1.6;
+}
+.exit-grid h3 { margin: 0 0 8px; font: 700 9.5px var(--mono); letter-spacing: .08em; }
+.exit-grid ol { margin: 0; padding: 0; list-style: none; }
+.exit-grid li::before { content: counter(list-item) ". "; font-family: var(--mono); }
+.mail { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mail code { font: 700 11px/2 var(--mono); padding: 0 8px; border: 1px solid rgba(0, 0, 0, .4); text-transform: none; overflow-wrap: anywhere; }
 button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
-.btn { background: var(--ink); color: var(--void); border: 0; padding: 0 10px; line-height: 2.2; font-weight: 700; }
+.btn { background: var(--ink); color: var(--ink-on); border: 0; padding: 0 10px; line-height: 2.2; font-weight: 700; }
 .btn:hover { background: var(--blood); color: var(--paper); }
-.fine { color: var(--dim); font-size: 9px; }
+#exit .btn { background: var(--soot); color: var(--blood); }
+#exit .btn:hover { background: var(--paper); color: var(--soot); }
+.exit-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 9px; padding-top: 10px; border-top: 1px solid rgba(0, 0, 0, .35); }
 
 /* command bar */
 .bar {
@@ -155,6 +249,7 @@ button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   background: var(--bar-bg); border-top: 1px solid var(--line);
   font-size: 10.5px;
+  transition: background .2s steps(2);
 }
 .bar nav { display: flex; gap: 18px; }
 .bar nav a { color: var(--dim); }
@@ -162,9 +257,10 @@ button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor
 .bar nav a.on, .bar nav a:hover { color: var(--ink); }
 .bar .right { display: flex; align-items: center; gap: 14px; font: 500 10px var(--mono); font-variant-numeric: tabular-nums; }
 .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--blood); margin-right: 6px; vertical-align: 1px; }
+body.is-red .dot { background: var(--ink); }
 .bar .btn { font: 700 10.5px var(--text); letter-spacing: .04em; }
 
-/* CRT glass */
+/* CRT glass + film grain */
 .crt {
   position: fixed; inset: 0; z-index: 8; pointer-events: none;
   background:
@@ -172,7 +268,15 @@ button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor
     radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, .7) 100%);
   animation: flick 5s steps(1) infinite;
 }
+body.is-light .crt { opacity: .35; animation: none; }
+body.is-red .crt { opacity: .6; animation: none; }
 @keyframes flick { 0%, 100% { opacity: 1; } 61% { opacity: .82; } 62% { opacity: 1; } 63% { opacity: .9; } 64% { opacity: 1; } }
+.grain {
+  position: fixed; inset: -50%; z-index: 8; pointer-events: none; opacity: .09;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain .5s steps(4) infinite;
+}
+@keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } }
 
 /* cursor */
 .cur, .cur-l { display: none; }
@@ -184,7 +288,10 @@ button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor
 }
 
 @media (min-width: 900px) {
-  main { margin-inline: calc(var(--rail) - 16px + 24px); }
+  main { margin-inline: calc(var(--rail) + 8px); }
+  .pl.tl { left: calc(var(--rail) + 20px); }
+  .pl.tr { right: calc(var(--rail) + 20px); }
+  .exit-in { padding-left: calc(var(--rail) + 20px); padding-right: calc(var(--rail) + 20px); }
 }
 @media (max-width: 899px) {
   .rail { display: none; }
@@ -196,10 +303,22 @@ button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor
   .cases .what { display: none; }
   .bar .clock { display: none; }
   .bar nav { gap: 12px; }
+  #profile { height: 300vh; }
+  .sil { height: 72%; }
+  .claw { width: 11vw; }
+  .teeth { left: 14%; top: 40%; }
+  .pl.h1, .pl.h2, .pl.h3 { display: none; }
+  .traits { top: 70%; font-size: 8.5px; column-gap: 16px; }
+  .barcode, .barcode + span { left: 16px; }
+  .exit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .bar .btn { display: none; }
+  .exit-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .crt, .blink { animation: none; }
+  .crt, .blink, .grain { animation: none; }
 }
 </style>
 </head>
@@ -248,7 +367,7 @@ button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor
   <div class="row"><span class="d">FILE 07 / OPEN</span><span class="blink">SCROLL</span></div>
 </aside>
 
-<main>
+<main class="gut">
   <section class="story" id="index">
     <h1>CASE FILE 07 · THE ONE THAT KEPT WATCHING</h1>
     <div class="col col-l">
@@ -309,43 +428,102 @@ button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor
       <li><span class="no">05</span><span class="name">LOW MOON</span><span class="what">PHOTOGRAPHY</span><span class="yr">2024</span></li>
     </ol>
   </section>
-
-  <section id="contact">
-    <span class="d">LAST KNOWN FREQUENCY</span>
-    <h2>DON'T CALL.<br><em>HOWL.</em></h2>
-    <div class="mail"><code id="mail">howl@yourdomain.com</code><button class="btn" id="copy" type="button">COPY ADDRESS +</button></div>
-    <span class="fine">© 2026 WOLF · ALL TERRITORY RESERVED</span>
-  </section>
 </main>
+
+<section id="profile" aria-label="Subject profile">
+  <div class="pin">
+    <canvas id="terrain" aria-hidden="true"></canvas>
+    <div class="claws-pos" aria-hidden="true"><div class="claws"><i class="claw"></i><i class="claw"></i><i class="claw"></i></div></div>
+    <svg class="sil" viewBox="0 0 600 700" aria-hidden="true">
+      <path class="body" d="M300 520 L250 470 L215 400 L170 370 L185 330 L150 300 L165 250 L140 200 L150 40 L235 150 L300 135 L365 150 L450 40 L460 200 L435 250 L450 300 L415 330 L430 370 L385 400 L350 470 Z M300 495 L240 520 L170 560 L60 620 L0 660 L0 700 L600 700 L600 660 L540 620 L430 560 L360 520 Z"/>
+      <path class="x" d="M222 268h26M235 255v26M352 268h26M365 255v26"/>
+      <rect class="dot" x="436" y="72" width="7" height="18"/>
+    </svg>
+    <div class="pl tl">SUBJECT PROFILE<br><span class="d">CANIS LUPUS · SPECIMEN 07</span></div>
+    <div class="pl tr">ART DIRECTION<br>MOTION<br>CREATIVE CODE</div>
+    <div class="pl h1">HEARING<br><b>≈10 KM</b></div>
+    <div class="pl h2">SMELL<br><b>≈100× YOURS</b></div>
+    <div class="pl h3">TOP SPEED<br><b>≈60 KM/H</b></div>
+    <div class="teeth"><span id="teeth">0000</span><small>TEETH</small></div>
+    <div class="traits">
+      <div><span class="w">FERAL</span><span class="w">NOCTURNAL</span><span class="w">PATIENT</span><span class="w">PRECISE</span><span class="w">UNTAMED</span><span class="w">LOYAL</span><span class="w">TERRITORIAL</span><span class="w">CURIOUS</span><span class="w">RESTLESS</span><span class="w">SHARP</span><span class="w">QUIET</span><span class="w">HUNGRY</span></div>
+      <div><span class="w">DISTINCTIVE</span><span class="w">FUNCTIONAL</span><span class="w">EXPERIMENTAL</span><span class="w">STRANGE</span><span class="w">DELIBERATE</span><span class="w">RAW</span><span class="w">CONCEPTUAL</span><span class="w">PHYSICAL</span><span class="w">CINEMATIC</span><span class="w">CRAFTED</span><span class="w">HONEST</span><span class="w">ALIVE</span></div>
+    </div>
+    <i class="barcode" aria-hidden="true"></i><span>FILE 07/B</span>
+    <div class="flood flood-black" aria-hidden="true"><svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg><div class="fill"></div></div>
+    <div class="flood flood-red" aria-hidden="true"><svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg><div class="fill"></div></div>
+  </div>
+</section>
+
+<section id="exit" aria-label="Contact">
+  <div class="exit-in gut" style="display: grid; gap: 28px;">
+    <h2>LEAVE BEFORE<br>IT SEES YOU</h2>
+    <div class="eyeband" id="eyeband">
+      <svg viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
+        <defs><clipPath id="eyeclip"><path d="M20 100 Q500 -70 980 100 Q500 270 20 100 Z"/></clipPath></defs>
+        <g id="eye">
+          <path d="M20 100 Q500 -70 980 100 Q500 270 20 100 Z" fill="var(--blood)"/>
+          <g clip-path="url(#eyeclip)">
+            <g id="pupil">
+              <circle cx="500" cy="100" r="88" fill="#b3170d"/>
+              <circle cx="500" cy="100" r="88" fill="none" stroke="#0b0b0b" stroke-opacity=".35" stroke-width="2" stroke-dasharray="3 5"/>
+              <circle cx="500" cy="100" r="44" fill="#0b0b0b"/>
+              <rect x="512" y="72" width="10" height="10" fill="#ffffff"/>
+            </g>
+          </g>
+        </g>
+      </svg>
+      <nav class="lbl tl" aria-label="Sections"><a href="#index">INDEX</a><a href="#work">WORK</a><a href="#profile">PROFILE</a></nav>
+      <div class="lbl br"><span>TAPETUM LUCIDUM</span><span class="chip">OBSERVING</span></div>
+    </div>
+    <div class="exit-grid">
+      <div><h3>01 · SUBJECT</h3>ART DIRECTION<br>MOTION IDENTITY<br>CREATIVE CODE<br>IMAGE</div>
+      <div><h3>02 · SIGNAL</h3><div class="mail"><code id="mail">howl@yourdomain.com</code><button class="btn" id="copy" type="button">COPY +</button></div></div>
+      <div><h3>03 · ROUTES</h3><ol><li><a href="#index">INDEX</a></li><li><a href="#work">WORK</a></li><li><a href="#profile">PROFILE</a></li></ol></div>
+      <div><h3>04 · STATUS</h3>AVAILABLE FOR NIGHT SHIFTS<br>REMOTE · ANY TIME ZONE</div>
+    </div>
+    <div class="exit-foot"><span>© 2026 WOLF · ALL TERRITORY RESERVED</span><a href="#index">BACK TO THE DARK ↑</a></div>
+  </div>
+</section>
 
 <footer class="bar">
   <nav aria-label="Sections">
     <a href="#index" class="on">INDEX</a>
     <a href="#work">WORK</a>
-    <a href="#contact">CONTACT</a>
+    <a href="#profile">PROFILE</a>
+    <a href="#exit">EXIT</a>
   </nav>
   <div class="right">
     <span class="clock"><span id="tz">GMT+0</span> &nbsp; <span class="dot blink"></span><span id="clock">00:00:00</span></span>
-    <a class="btn" href="#contact">DON'T CALL ME +</a>
+    <a class="btn" href="#exit">DON'T CALL ME +</a>
   </div>
 </footer>
 
 <div class="crt" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
 <div class="cur" aria-hidden="true"></div>
 <div class="cur-l" aria-hidden="true">X 0000 · Y 0000</div>
 
 <script type="importmap">
-{ "imports": { "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js", "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/" } }
+{ "imports": {
+  "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js",
+  "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/",
+  "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.4.1/dist/bundles/anime.esm.min.js"
+} }
 </script>
 <script type="module">
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
+import { animate, createTimeline, onScroll, stagger, createAnimatable, splitText, cubicBezier, utils } from 'animejs';
 gsap.registerPlugin(ScrollTrigger);
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const pad = (n, l = 4) => String(Math.max(0, n | 0)).padStart(l, '0');
+const body = document.body;
+const easeOut = cubicBezier(.16, 1, .3, 1); // arrivals
+const easeInOut = cubicBezier(.65, 0, .35, 1); // moves between two states
 
 /* ---------- wolf: a colour-emoji glyph sampled into a rotating thermal point cloud ---------- */
 const cv = $('#wolf'), ctx = cv.getContext('2d');
@@ -396,6 +574,8 @@ resize();
 addEventListener('resize', resize);
 
 function frame(ms) {
+  requestAnimationFrame(frame);
+  if (body.classList.contains('is-light') || body.classList.contains('is-red')) return; // covered by the profile and exit, skip the work
   const t = ms / 1000;
   const sway = calm ? 0 : Math.sin(t * .35) * .25;
   state.ry += ((state.mx - .5) * .9 + sway + state.scroll * Math.PI * 2 - state.ry) * .06; // one full turn over the page
@@ -417,7 +597,6 @@ function frame(ms) {
     const by = Math.random() * H | 0, bh = 4 + Math.random() * 28 | 0;
     ctx.drawImage(cv, 0, by, W, bh, (Math.random() - .5) * 24 * dpr, by, W, bh);
   }
-  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 
@@ -431,7 +610,7 @@ addEventListener('pointermove', (e) => {
   $('#px').textContent = pad(e.clientX); $('#py').textContent = pad(e.clientY);
   curL.textContent = `X ${pad(e.clientX)} · Y ${pad(e.clientY)}`;
 });
-$$('a, button, .cases li').forEach((el) => {
+$$('a, button, .cases li, .eyeband').forEach((el) => {
   el.addEventListener('pointerenter', () => cur.classList.add('big'));
   el.addEventListener('pointerleave', () => cur.classList.remove('big'));
 });
@@ -461,20 +640,134 @@ lines.forEach((el) => {
   ScrollTrigger.create({ trigger: el, start: 'top 86%', once: true, onEnter: () => scramble(el) });
 });
 if (!calm) setInterval(() => {
-  const lit = lines.filter((l) => l.classList.contains('on'));
-  if (lit.length) scramble(lit[Math.random() * lit.length | 0], .35);
-}, 2200);
+  // only glitch lines near the screen edges, never the ones being read in the middle
+  const lit = lines.filter((l) => {
+    if (!l.classList.contains('on')) return false;
+    const r = l.getBoundingClientRect();
+    return r.bottom > 0 && r.top < innerHeight && Math.abs(r.top - innerHeight / 2) > innerHeight * .32;
+  });
+  if (lit.length) scramble(lit[Math.random() * lit.length | 0], .3);
+}, 3200);
 
 /* ---------- scroll wiring ---------- */
 const fill = $('#fill');
 ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { state.scroll = s.progress; fill.style.transform = `scaleX(${s.progress})`; } });
 gsap.to('#wolf', { opacity: .16, ease: 'none', scrollTrigger: { trigger: '#work', start: 'top 75%', end: 'top 20%', scrub: true } });
-$$('.bar nav a').forEach((a) => {
+const navLinks = $$('.bar nav a');
+navLinks.forEach((a) => {
   ScrollTrigger.create({
     trigger: a.getAttribute('href'), start: 'top 50%', end: 'bottom 50%',
-    onToggle: (s) => { if (s.isActive) { $$('.bar nav a').forEach((x) => x.classList.remove('on')); a.classList.add('on'); } },
+    onToggle: (s) => { if (s.isActive) { navLinks.forEach((x) => x.classList.remove('on')); a.classList.add('on'); } },
   });
 });
+// re-ink the HUD: white while the profile is pinned, red once the flood has passed the middle of the screen
+const FLOOD_AT = .86;
+const theme = (s) => {
+  body.classList.toggle('is-light', s.isActive && s.progress < FLOOD_AT);
+  body.classList.toggle('is-red', s.progress >= FLOOD_AT);
+};
+ScrollTrigger.create({ trigger: '#profile', start: 'top top', end: 'bottom bottom', onUpdate: theme, onToggle: theme, onRefresh: theme });
+
+/* ---------- profile (anime.js): power-on, claw marks, counter, traits, flood ---------- */
+const prof = $('#profile');
+const observers = [];
+const watch = (o) => (observers.push(o), o);
+
+animate('#profile .pin', {
+  '--open': [0, 1], ease: easeOut,
+  autoplay: watch(onScroll({ target: prof, enter: 'bottom top', leave: 'top top', sync: true })),
+});
+
+const tcv = $('#terrain'), tctx = tcv.getContext('2d');
+const ASH = getComputedStyle(document.documentElement).getPropertyValue('--ash').trim();
+const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+const smooth = (t) => t * t * (3 - 2 * t);
+function noise(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), u = smooth(x - xi), v = smooth(y - yi);
+  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+const fbm = (x, y) => noise(x, y) * .55 + noise(x * 2.1, y * 2.1) * .3 + noise(x * 4.3, y * 4.3) * .15;
+let TW = 0, TH = 0, tdpr = 1, terrainP = 0, terrainQueued = false;
+function drawTerrain() {
+  terrainQueued = false;
+  const step = 6 * tdpr, drift = terrainP * 1.6;
+  tctx.clearRect(0, 0, TW, TH);
+  tctx.fillStyle = ASH;
+  for (let y = 0; y < TH; y += step) for (let x = 0; x < TW; x += step) {
+    const n = fbm(x / tdpr * .0035 + drift, y / tdpr * .005 - drift * .4);
+    const s = Math.min(1, Math.max(0, (n - .44) * 5)) * step * .78; // halftone: white land, dotted sea
+    if (s > .8) tctx.fillRect(x + (step - s) / 2, y + (step - s) / 2, s, s);
+  }
+}
+const queueTerrain = (p) => { terrainP = p; if (!terrainQueued) { terrainQueued = true; requestAnimationFrame(drawTerrain); } };
+function sizeTerrain() {
+  tdpr = Math.min(1.5, devicePixelRatio || 1);
+  TW = tcv.width = Math.round(tcv.clientWidth * tdpr);
+  TH = tcv.height = Math.round(tcv.clientHeight * tdpr);
+  queueTerrain(terrainP);
+}
+sizeTerrain();
+addEventListener('resize', sizeTerrain);
+
+const counter = { n: 0 }, teeth = $('#teeth');
+createTimeline({
+  defaults: { ease: 'linear' },
+  autoplay: watch(onScroll({ target: prof, enter: 'top top', leave: 'bottom bottom', sync: calm ? true : .2 })),
+  onUpdate: (self) => queueTerrain(self.progress),
+})
+  .add('.sil', { scale: [.86, 1.04], translateY: ['6%', '0%'], duration: 700, ease: easeOut }, 0)
+  .add('.claw', { scaleY: [0, 1], duration: 240, delay: stagger(70), ease: easeOut }, 40)
+  .add(counter, { n: [0, 42], duration: 480, ease: easeOut, onUpdate: () => { teeth.textContent = pad(counter.n); } }, 140)
+  .add('.traits .w', { opacity: [0, 1], duration: 40, delay: stagger(14) }, 240)
+  .add('.claws', { rotate: [-32, -14], translateX: ['0vw', '-5vw'], duration: 520, ease: easeInOut }, 300)
+  .add('.flood-black', { translateY: ['105%', '-6%'], duration: 210, ease: easeOut }, 760)
+  .add('.flood-red', { translateY: ['105%', '0%'], duration: 200, ease: easeOut }, 790);
+
+// the flood's top edge is a sum of sines, redrawn only while the profile is on screen
+const waves = $$('.flood path');
+let waveOn = false;
+function wave(ms) {
+  const t = ms / 1000;
+  waves.forEach((p, k) => {
+    let d = 'M0 100';
+    for (let x = 0; x <= 1000; x += 20) {
+      const y = 55 + Math.sin(x * .011 + t * (1 + k * .3) + k * 2) * 16 + Math.sin(x * .029 - t * 1.4) * 9 + Math.sin(x * .071 + t * 2.2 + k) * 5;
+      d += ` L${x} ${y.toFixed(1)}`;
+    }
+    p.setAttribute('d', `${d} L1000 100 Z`);
+  });
+  if (waveOn && !calm) requestAnimationFrame(wave);
+}
+wave(0);
+new IntersectionObserver(([e]) => {
+  const was = waveOn;
+  waveOn = e.isIntersecting;
+  if (waveOn && !was && !calm) requestAnimationFrame(wave);
+}).observe(prof);
+
+/* ---------- exit (anime.js): headline, watching eye ---------- */
+const { chars } = splitText('#exit h2', { chars: { wrap: 'clip' } });
+if (!calm) animate(chars, {
+  translateY: ['110%', '0%'], duration: 900, delay: stagger(18), ease: easeOut,
+  autoplay: watch(onScroll({ target: '#exit h2', enter: 'bottom top' })),
+});
+
+const band = $('#eyeband');
+const pupil = createAnimatable('#pupil', { translateX: 700, translateY: 700, ease: 'out(3)' });
+addEventListener('pointermove', (e) => {
+  const r = band.getBoundingClientRect();
+  if (r.bottom < -200 || r.top > innerHeight + 200) return;
+  pupil.translateX(utils.clamp((e.clientX - (r.left + r.width / 2)) / (r.width / 2), -1, 1) * 330);
+  pupil.translateY(utils.clamp((e.clientY - (r.top + r.height / 2)) / (innerHeight / 2), -1, 1) * 34);
+});
+if (!calm) (function blink() {
+  animate('#eye', { scaleY: [1, .04, 1], duration: 260, ease: 'inOut(2)' });
+  setTimeout(blink, utils.random(2600, 6200));
+})();
+
+// webfonts shift the layout; an observer without a target yet measures itself when it links up
+document.fonts.ready.then(() => { ScrollTrigger.refresh(); observers.forEach((o) => o.target && o.refresh()); });
 
 /* ---------- HUD details ---------- */
 // moon illumination from the synodic month, counted from the new moon of 6 Jan 2000 18:14 UTC
@@ -499,7 +792,7 @@ setInterval(() => { tabs[tab].classList.remove('on'); tab = (tab + 1) % tabs.len
 $('#copy').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   try { await navigator.clipboard.writeText($('#mail').textContent); btn.textContent = 'COPIED +'; }
-  catch { getSelection().selectAllChildren($('#mail')); btn.textContent = 'SELECTED · PRESS CTRL+C'; }
+  catch { getSelection().selectAllChildren($('#mail')); btn.textContent = 'SELECTED · CTRL+C'; }
 });
 
 /* ---------- boot sequence ---------- */
@@ -511,9 +804,9 @@ gsap.timeline({ defaults: { ease: 'none' } })
   .to(mark, { strokeDashoffset: 0, duration: calm ? .2 : 1.4, ease: 'power2.inOut' }, 0)
   .to(n, { v: 100, duration: calm ? .2 : 1.6, ease: 'power1.in', onUpdate: () => { count.textContent = `${pad(n.v, 3)}%`; } }, 0)
   .to(boot, { opacity: 0, duration: .05, repeat: calm ? 0 : 3, yoyo: true })
-  .to(boot, { clipPath: 'inset(0 0 100% 0)', duration: calm ? .2 : .9, ease: 'expo.inOut' })
+  .to(boot, { clipPath: 'inset(0 0 100% 0)', duration: calm ? .2 : .55, ease: 'power3.in' }) // exits leave fast
   .set(boot, { display: 'none' })
-  .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .4, stagger: .035, ease: 'power2.out' }, '-=.5');
+  .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .7, stagger: .04, ease: 'expo.out' }, '-=.3');
 </script>
 </body>
 </html>
