@@ -67,10 +67,6 @@ a { color: inherit; text-decoration: none; }
   background: var(--blood); color: var(--paper);
   font-size: 8.5px; text-align: center; line-height: 1.5;
   animation: bootout 0s 6s forwards; /* if the CDN never answers, the page still opens */
-  /* power-off: --ct squeezes it to a line, --cr then to a dot. Tweened as variables because the browser
-     rewrites clip-path insets into shorthand, which mispairs the numbers between two clip-path tweens. */
-  --ct: 0%; --cr: 0%;
-  clip-path: inset(var(--ct) var(--cr));
 }
 #boot svg { width: 92px; height: auto; overflow: visible; }
 #boot path { fill: none; stroke: var(--paper); stroke-width: 11; stroke-linecap: square; stroke-linejoin: miter; }
@@ -269,8 +265,15 @@ main { position: relative; z-index: 2; }
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
   background: var(--chalk); color: var(--soot);
 }
-/* work → profile: a full-screen white wash between chapters (dip, hold, reveal). Under the bar, over everything else. */
-.wash { position: fixed; inset: 0; z-index: 4; pointer-events: none; background: var(--paper); opacity: 0; visibility: hidden; }
+/* work → profile: a white flood, the twin of the red flood into the exit. Fixed over the page (under the bar),
+   it rises with the scroll as the profile arrives, fills the screen as it pins, then fades into the sheet.
+   GSAP owns its position (yPercent), so the in-pin flood's translateY is switched off here. */
+.white-flood { position: fixed; inset: 0; z-index: 4; pointer-events: none; visibility: hidden; }
+.white-flood .flood { transform: none; }
+.flood-ash path { fill: var(--ash); }
+.flood-ash .fill { background: var(--ash); }
+.flood-chalk path { fill: var(--chalk); }
+.flood-chalk .fill { background: var(--chalk); }
 #terrain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .claws-pos { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
 .claws { display: flex; gap: 3.2vw; transform: rotate(-32deg); }
@@ -682,7 +685,10 @@ body.is-red .crt { opacity: .6; animation: none; }
   </div>
 </div>
 
-<div class="wash" aria-hidden="true"></div>
+<div class="white-flood" aria-hidden="true">
+  <div class="flood flood-ash"><svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg><div class="fill"></div></div>
+  <div class="flood flood-chalk"><svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg><div class="fill"></div></div>
+</div>
 <div class="crt" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="cur" aria-hidden="true"></div>
@@ -724,15 +730,13 @@ if (lenis) {
 }
 // in-page links glide through the page instead of jumping, so the section transitions play on the way
 const glide = (t) => 1 - Math.pow(1 - t, 4);
-let gliding = false; // a nav jump is travelling; transitions on the way must not grab the scroll
-['wheel', 'touchstart'].forEach((ev) => addEventListener(ev, () => { gliding = false; }, { passive: true })); // the user took over mid-jump
 document.addEventListener('click', (e) => {
   const a = e.target.closest?.('a[href^="#"]');
   if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
   const target = document.querySelector(a.getAttribute('href'));
   if (!target) return;
   e.preventDefault();
-  if (lenis) { gliding = true; lenis.scrollTo(target, { duration: 1.8, easing: glide, onComplete: () => { gliding = false; } }); }
+  if (lenis) lenis.scrollTo(target, { duration: 1.8, easing: glide });
   else target.scrollIntoView();
 });
 const easeInOut = cubicBezier(.65, 0, .35, 1); // moves between two states
@@ -775,13 +779,6 @@ const BLOOD = ramp([[24, 0, 0], [120, 8, 4], [232, 41, 28], [255, 140, 110], [25
 
 const SAMPLE = 240;
 const pts = samplePoints();
-// Birth: every point starts in a tight clump where the boot screen collapses to its dot (the viewport centre,
-// 4% below the canvas centre because of the -54% offset) and flies out to its place, centre first.
-for (const p of pts) {
-  p.d = Math.min(1, Math.hypot(p.x, p.y) * 1.8);
-  p.sx = (Math.random() - .5) * .02; p.sy = .04 + (Math.random() - .5) * .02; p.sz = (Math.random() - .5) * .02;
-}
-state.assemble = calm ? 1 : 0; // 0 = all points in the dot, 1 = the finished wolf; the boot timeline drives it
 let W = 0, H = 0, dpr = 1;
 function resize() {
   dpr = Math.min(2, devicePixelRatio || 1);
@@ -802,21 +799,14 @@ function frame(ms) {
   const cy = Math.cos(state.ry), sy = Math.sin(state.ry), cx = Math.cos(state.rx), sx = Math.sin(state.rx);
   const sc = W * .92, R = state.hot > .5 ? BLOOD : HEAT, px = Math.max(1, Math.round(sc * 2 / SAMPLE * .62));
   ctx.clearRect(0, 0, W, H);
-  const A = state.assemble;
   for (const p of pts) {
-    let bx = p.x, by = p.y, bz = p.z, heat = 0;
-    if (A < 1) { // each point launches when the wave reaches it, lands with a quartic ease-out, and cools from white-hot
-      const f = Math.min(1, Math.max(0, (A - p.d * .45) / .55)), e = 1 - (1 - f) ** 4;
-      bx = p.sx + (p.x - p.sx) * e; by = p.sy + (p.y - p.sy) * e; bz = p.sz + (p.z - p.sz) * e;
-      heat = (1 - e) * .9;
-    }
-    const x = bx * cy + bz * sy;
-    let z = -bx * sy + bz * cy;
-    const y = by * cx - z * sx;
-    z = by * sx + z * cx;
+    const x = p.x * cy + p.z * sy;
+    let z = -p.x * sy + p.z * cy;
+    const y = p.y * cx - z * sx;
+    z = p.y * sx + z * cx;
     const k = 2 / (2 - z), X = W / 2 + x * sc * k, Y = H / 2 + y * sc * k;
     const shimmer = calm ? 0 : Math.sin(p.y * 12 + p.x * 4 - t * 1.6) * .18;
-    ctx.fillStyle = R[Math.min(63, Math.max(0, ((p.l * .5 + z * 1.1 + .05 + shimmer + heat) * 63) | 0))];
+    ctx.fillStyle = R[Math.min(63, Math.max(0, ((p.l * .5 + z * 1.1 + .05 + shimmer) * 63) | 0))];
     ctx.fillRect(X | 0, Y | 0, px, px);
   }
   if (!calm && Math.random() < .025) { // tear a horizontal band now and then
@@ -924,23 +914,20 @@ const prof = $('#profile');
 const observers = [];
 const watch = (o) => (observers.push(o), o);
 
-/* ---------- work → profile: white wash (a played sequence, not scrubbed) ----------
-   Dip: white covers the screen fast while the page eases onto the pinned profile underneath.
-   Hold: a beat of pure white. Reveal: the white lifts and the sheet rises into place. */
-let washing = null;
-function wash(forward) {
-  washing?.kill();
-  if (forward && lenis && !gliding) lenis.scrollTo(prof, { duration: .9, lock: true, force: true }); // land pinned, not half-way
-  washing = gsap.timeline({ defaults: { overwrite: 'auto' } })
-    .set('.wash', { visibility: 'visible' })
-    .to('.wash', { opacity: 1, duration: forward ? .35 : .22, ease: 'power2.in' })     // dip
-    .to({}, { duration: forward ? .3 : .1 })                                             // hold
-    .set('#profile .pin', { y: forward ? 28 : 0 })
-    .to('.wash', { opacity: 0, duration: forward ? .7 : .4, ease: 'power2.out' })        // reveal
-    .to('#profile .pin', { y: 0, duration: .9, ease: 'expo.out' }, '<')
-    .set('.wash', { visibility: 'hidden' });
+/* ---------- work → profile: white flood (GSAP, scrubbed) ----------
+   While the section scrolls in, an ash edge and the chalk flood behind it rise from the bottom over the
+   case files, reaching the top exactly as the profile pins; then the flood fades into the sheet beneath.
+   Their wavy edges are redrawn by wave() below, the same loop that moves the red flood. */
+if (!calm) {
+  gsap.timeline({ scrollTrigger: { trigger: prof, start: 'top bottom', end: 'top top', scrub: true } })
+    .set('.white-flood', { visibility: 'visible' }, 0)
+    // linear and slightly ahead of the incoming section's top edge, so the wave (not the sheet) is what you see arrive
+    .fromTo('.white-flood .flood-ash', { yPercent: 78 }, { yPercent: -12, duration: 1, ease: 'none' }, 0)
+    .fromTo('.white-flood .flood-chalk', { yPercent: 90 }, { yPercent: -2, duration: 1, ease: 'none' }, 0);
+  gsap.fromTo('.white-flood', { opacity: 1 }, { opacity: 0, ease: 'power1.out', scrollTrigger: { trigger: prof, start: 'top top', end: () => `+=${innerHeight * .2}`, scrub: true } });
+} else {
+  document.querySelector('.white-flood').remove(); // reduced motion: a plain cut, and no wave paths to animate
 }
-if (!calm) ScrollTrigger.create({ trigger: prof, start: 'top 45%', onEnter: () => wash(true), onLeaveBack: () => wash(false) });
 
 const tcv = $('#terrain'), tctx = tcv.getContext('2d');
 const ASH = getComputedStyle(document.documentElement).getPropertyValue('--ash').trim();
@@ -975,18 +962,11 @@ sizeTerrain();
 addEventListener('resize', sizeTerrain);
 
 const counter = { n: 0 }, teeth = $('#teeth');
-// Driven by GSAP's ScrollTrigger (already fed by Lenis) rather than anime's own onScroll:
-// anime's exact-sync mode never advanced under Lenis, which left the claws fully drawn and the counter at 0000.
-const profileTl = createTimeline({ defaults: { ease: 'linear' }, autoplay: false });
-// tweens that start later in the timeline don't render until reached, so give them their start state now
-utils.set('.claw', { scaleY: 0 });
-utils.set('.traits .w', { opacity: 0 });
-ScrollTrigger.create({
-  trigger: prof, start: 'top top', end: 'bottom bottom',
-  onUpdate: (s) => { profileTl.seek(s.progress * profileTl.duration); queueTerrain(s.progress); },
-  onRefresh: (s) => profileTl.seek(s.progress * profileTl.duration),
-});
-profileTl
+createTimeline({
+  defaults: { ease: 'linear' },
+  autoplay: watch(onScroll({ target: prof, enter: 'top top', leave: 'bottom bottom', sync: true })), // Lenis already smooths the scroll; a second smoothing layer would lag
+  onUpdate: (self) => queueTerrain(self.progress),
+})
   .add('.sil', { scale: [.86, 1.04], translateY: ['6%', '0%'], duration: 700, ease: easeOut }, 0)
   .add('.claw', { scaleY: [0, 1], duration: 240, delay: stagger(70), ease: easeOut }, 40)
   .add(counter, { n: [0, 42], duration: 480, ease: easeOut, onUpdate: () => { teeth.textContent = pad(counter.n); } }, 140)
@@ -1068,26 +1048,14 @@ const boot = $('#boot');
 boot.style.animation = 'none';
 const n = { v: 0 }, count = $('#boot .count'), mark = $('#boot path'), len = mark.getTotalLength();
 gsap.set(mark, { strokeDasharray: len, strokeDashoffset: len });
-const bootTl = gsap.timeline({ defaults: { ease: 'none' } })
+gsap.timeline({ defaults: { ease: 'none' } })
   .to(mark, { strokeDashoffset: 0, duration: calm ? .2 : 1.4, ease: 'power2.inOut' }, 0)
   .to(n, { v: 100, duration: calm ? .2 : 1.6, ease: 'power1.in', onUpdate: () => { count.textContent = `${pad(n.v, 3)}%`; } }, 0)
-  .to(boot, { opacity: 0, duration: .05, repeat: calm ? 0 : 3, yoyo: true });
-if (calm) {
-  bootTl.to(boot, { opacity: 0, duration: .25 }).set(boot, { display: 'none' });
-} else {
-  // CRT power-off: the red screen turns white-hot and collapses to a line, then to a dot at the centre;
-  // the wolf is born from that dot (state.assemble), then the interface settles in around it
-  bootTl
-    .to('#boot > *', { opacity: 0, duration: .12 })
-    .to(boot, { '--ct': '49.7%', backgroundColor: '#ffffff', duration: .32, ease: 'power3.in' }, '<')
-    .to(boot, { '--cr': '49.7%', duration: .22, ease: 'power3.in' })
-    .to(boot, { opacity: 0, duration: .14, ease: 'power1.out' })
-    .set(boot, { display: 'none' })
-    .to(state, { assemble: 1, duration: 2.1, ease: 'none' }, '<-.08');
-}
-bootTl
-  .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .7, stagger: .04, ease: 'expo.out' }, calm ? '-=.1' : '-=1.1')
-  .from('#t-open', { opacity: 0, y: 14, duration: .8, ease: 'expo.out' }, '<.25');
+  .to(boot, { opacity: 0, duration: .05, repeat: calm ? 0 : 3, yoyo: true })
+  .to(boot, { clipPath: 'inset(0 0 100% 0)', duration: calm ? .2 : .55, ease: 'power3.in' }) // exits leave fast
+  .set(boot, { display: 'none' })
+  .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .7, stagger: .04, ease: 'expo.out' }, '-=.3')
+  .from('#t-open', { opacity: 0, y: 14, duration: .8, ease: 'expo.out' }, '<.2');
 </script>
 
 <!-- member access: kept in its own module so a Supabase outage never takes the rest of the site down -->
