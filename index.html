@@ -265,16 +265,8 @@ main { position: relative; z-index: 2; }
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
   background: var(--chalk); color: var(--soot);
 }
-/* work → profile: the screen switches on like a CRT. Fixed over the page (under the bar), driven by scroll:
-   dark screen, a dot, a scan line, the picture opening from the line, then a flash settling into the sheet. */
-.crt-on { position: fixed; inset: 0; z-index: 4; pointer-events: none; visibility: hidden; }
-.crt-on .dark { position: absolute; inset: 0; background: var(--void); opacity: 0; }
-.crt-on .band { position: absolute; inset: 0; background: var(--paper); clip-path: inset(50% 0% 50% 0%); }
-.crt-on .beam {
-  position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px;
-  background: var(--paper); transform: scaleX(.004); opacity: 0;
-  box-shadow: 0 0 14px 3px rgba(255, 255, 255, .7), 0 0 60px 12px rgba(218, 236, 241, .3);
-}
+/* work → profile: a full-screen white wash between chapters (dip, hold, reveal). Under the bar, over everything else. */
+.wash { position: fixed; inset: 0; z-index: 4; pointer-events: none; background: var(--paper); opacity: 0; visibility: hidden; }
 #terrain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .claws-pos { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
 .claws { display: flex; gap: 3.2vw; transform: rotate(-32deg); }
@@ -686,7 +678,7 @@ body.is-red .crt { opacity: .6; animation: none; }
   </div>
 </div>
 
-<div class="crt-on" aria-hidden="true"><i class="dark"></i><i class="beam"></i><i class="band"></i></div>
+<div class="wash" aria-hidden="true"></div>
 <div class="crt" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="cur" aria-hidden="true"></div>
@@ -728,13 +720,15 @@ if (lenis) {
 }
 // in-page links glide through the page instead of jumping, so the section transitions play on the way
 const glide = (t) => 1 - Math.pow(1 - t, 4);
+let gliding = false; // a nav jump is travelling; transitions on the way must not grab the scroll
+['wheel', 'touchstart'].forEach((ev) => addEventListener(ev, () => { gliding = false; }, { passive: true })); // the user took over mid-jump
 document.addEventListener('click', (e) => {
   const a = e.target.closest?.('a[href^="#"]');
   if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
   const target = document.querySelector(a.getAttribute('href'));
   if (!target) return;
   e.preventDefault();
-  if (lenis) lenis.scrollTo(target, { duration: 1.8, easing: glide });
+  if (lenis) { gliding = true; lenis.scrollTo(target, { duration: 1.8, easing: glide, onComplete: () => { gliding = false; } }); }
   else target.scrollIntoView();
 });
 const easeInOut = cubicBezier(.65, 0, .35, 1); // moves between two states
@@ -912,19 +906,23 @@ const prof = $('#profile');
 const observers = [];
 const watch = (o) => (observers.push(o), o);
 
-/* ---------- work → profile: CRT power-on (GSAP, scrubbed) ----------
-   While the section scrolls in: the page goes dark, a dot appears, snaps into a scan line, and the
-   picture opens from the line until it fills the screen exactly as the profile pins. Then the flash
-   fades over the first stretch of the pin, revealing the sheet underneath. */
-if (!calm) {
-  gsap.timeline({ scrollTrigger: { trigger: prof, start: 'top bottom', end: 'top top', scrub: true } })
-    .set('.crt-on', { visibility: 'visible' }, 0)
-    .fromTo('.crt-on .dark', { opacity: 0 }, { opacity: .96, duration: .3, ease: 'power1.in' }, 0)
-    .fromTo('.crt-on .beam', { opacity: 0, scaleX: .004 }, { opacity: 1, duration: .06, ease: 'none' }, .26)
-    .to('.crt-on .beam', { scaleX: 1, duration: .2, ease: 'expo.in' }, .32)
-    .fromTo('.crt-on .band', { clipPath: 'inset(50% 0% 50% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: .44, ease: 'power3.in' }, .56);
-  gsap.fromTo('.crt-on', { opacity: 1 }, { opacity: 0, ease: 'power1.out', scrollTrigger: { trigger: prof, start: 'top top', end: () => `+=${innerHeight * .18}`, scrub: true } });
+/* ---------- work → profile: white wash (a played sequence, not scrubbed) ----------
+   Dip: white covers the screen fast while the page eases onto the pinned profile underneath.
+   Hold: a beat of pure white. Reveal: the white lifts and the sheet rises into place. */
+let washing = null;
+function wash(forward) {
+  washing?.kill();
+  if (forward && lenis && !gliding) lenis.scrollTo(prof, { duration: .9, lock: true, force: true }); // land pinned, not half-way
+  washing = gsap.timeline({ defaults: { overwrite: 'auto' } })
+    .set('.wash', { visibility: 'visible' })
+    .to('.wash', { opacity: 1, duration: forward ? .35 : .22, ease: 'power2.in' })     // dip
+    .to({}, { duration: forward ? .3 : .1 })                                             // hold
+    .set('#profile .pin', { y: forward ? 28 : 0 })
+    .to('.wash', { opacity: 0, duration: forward ? .7 : .4, ease: 'power2.out' })        // reveal
+    .to('#profile .pin', { y: 0, duration: .9, ease: 'expo.out' }, '<')
+    .set('.wash', { visibility: 'hidden' });
 }
+if (!calm) ScrollTrigger.create({ trigger: prof, start: 'top 45%', onEnter: () => wash(true), onLeaveBack: () => wash(false) });
 
 const tcv = $('#terrain'), tctx = tcv.getContext('2d');
 const ASH = getComputedStyle(document.documentElement).getPropertyValue('--ash').trim();
