@@ -78,7 +78,7 @@ a { color: inherit; text-decoration: none; }
 #wolf {
   position: fixed; left: 50%; top: 50%; z-index: 1;
   width: min(66vh, 50vw); aspect-ratio: 1; max-width: 100%;
-  transform: translate(-50%, -54%);
+  transform: translate(-50%, -54%) scale(var(--ws, 1)); /* --ws: the wolf steps back behind the case index */
   pointer-events: none;
   filter: drop-shadow(2px 0 rgba(255, 0, 70, .55)) drop-shadow(-2px 0 rgba(0, 210, 255, .45));
 }
@@ -212,21 +212,38 @@ main { position: relative; z-index: 2; }
   text-wrap: balance;
 }
 .col { display: flex; flex-direction: column; min-width: 0; }
-.col-l { grid-column: 1; text-align: right; }
-.col-r { grid-column: 3; }
-.line { opacity: .32; white-space: pre-wrap; }
+/* columns hug their text so each redaction bar covers the words, not the whole column */
+.col-l { grid-column: 1; text-align: right; align-items: flex-end; }
+.col-r { grid-column: 3; align-items: flex-start; }
+.line { position: relative; opacity: .32; white-space: pre-wrap; }
 .line.on { opacity: 1; }
+
+/* story → work: the file redacts itself, gets stamped closed, and the case index unredacts.
+   --redact (0–1) is scrubbed by scroll; bars stay at 0 unless the transition script sets them. */
+.line::after, .cases .name::after {
+  content: ""; position: absolute; left: -.15em; right: -.15em; top: .32em; bottom: .32em;
+  background: var(--ink); transform: scaleX(var(--redact, 0)); transform-origin: left center; pointer-events: none;
+}
+.stamp {
+  grid-column: 1 / -1; justify-self: center; margin-top: 12vh;
+  display: grid; gap: 4px; justify-items: center; padding: 12px 22px 14px;
+  border: 3px double var(--blood); color: var(--blood);
+  font-size: 9.5px; letter-spacing: .22em; transform: rotate(-7deg);
+}
+.stamp b { font: 900 clamp(34px, 5vw, 64px)/1 var(--display); letter-spacing: .06em; }
 
 /* work */
 #work { padding-block: 16vh 22vh; }
-.sec-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 9.5px; }
+.sec-head { position: relative; display: flex; justify-content: space-between; gap: 16px; padding-bottom: 12px; font-size: 9.5px; }
+.sec-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); transform: scaleX(var(--draw, 1)); transform-origin: left; }
 .cases { list-style: none; margin: 0; padding: 0; }
 .cases li {
   display: grid; grid-template-columns: 3.2em minmax(0, 1fr) auto 4em; align-items: baseline; gap: 16px;
   padding: 16px 10px; border-bottom: 1px solid var(--line);
   transition: background .15s steps(2), color .15s steps(2);
 }
-.cases .name { font: 900 clamp(26px, 4.4vw, 58px)/1 var(--display); letter-spacing: .02em; overflow-wrap: anywhere; }
+.cases .name { position: relative; justify-self: start; font: 900 clamp(26px, 4.4vw, 58px)/1 var(--display); letter-spacing: .02em; overflow-wrap: anywhere; }
+.cases .name::after { top: .06em; bottom: .06em; transform-origin: right center; } /* rows unredact left to right */
 .cases .no, .cases .yr { font: 500 10px var(--mono); }
 .cases .yr { text-align: right; }
 .cases li:hover { background: var(--blood); color: var(--void); }
@@ -397,7 +414,7 @@ body.is-red .crt { opacity: .6; animation: none; }
   #wolf { width: min(92vw, 70vh); opacity: .5; }
   .story { grid-template-columns: 1fr; padding-block: 0 24vh; text-align: center; }
   .term { text-align: left; }
-  .col-l, .col-r { grid-column: 1; text-align: center; }
+  .col-l, .col-r { grid-column: 1; text-align: center; align-items: center; }
   .col-r { margin-top: 1.9em; }
   .cases li { grid-template-columns: 2.4em minmax(0, 1fr) 3em; }
   .cases .what { display: none; }
@@ -527,6 +544,7 @@ body.is-red .crt { opacity: .6; animation: none; }
       <span class="line">THE FILE STAYS OPEN.</span>
       <span class="line">IT IS PROBABLY WATCHING YOU SCROLL.</span>
     </div>
+    <div class="stamp" aria-hidden="true"><span>CASE FILE 07</span><b>CLOSED</b><span>CONTINUE TO INDEX ↓</span></div>
   </section>
 
   <section id="work">
@@ -836,8 +854,29 @@ if (!calm) setInterval(() => {
 
 /* ---------- scroll wiring ---------- */
 const fill = $('#fill');
-ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { state.scroll = s.progress; fill.style.transform = `scaleX(${s.progress})`; } });
-gsap.to('#wolf', { opacity: .16, ease: 'none', scrollTrigger: { trigger: '#work', start: 'top 75%', end: 'top 20%', scrub: true } });
+let themeST = null; // the profile's theme trigger, created below; theme() is a no-op until then
+ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { state.scroll = s.progress; fill.style.transform = `scaleX(${s.progress})`; theme(); } });
+gsap.to('#wolf', { opacity: .16, '--ws': calm ? 1 : .72, ease: 'none', scrollTrigger: { trigger: '#work', start: 'top 75%', end: 'top 20%', scrub: true } });
+
+/* ---------- story → work: the file redacts itself, is stamped CLOSED, and the case index unredacts ---------- */
+if (!calm) {
+  // the closing lines of both columns, interleaved so the bars sweep down the page in reading order
+  const L = $$('.col-l .line').slice(-16), R = $$('.col-r .line').slice(-16);
+  const tail = L.flatMap((l, i) => [l, R[i]]).filter(Boolean);
+  gsap.timeline({ scrollTrigger: { trigger: R[R.length - 1], start: 'top 78%', end: 'top 22%', scrub: true } })
+    .to(tail, { '--redact': 1, duration: .07, stagger: .04, ease: 'power2.inOut' }, 0)
+    .fromTo('.stamp', { opacity: 0, scale: 1.7, rotate: -18 }, { opacity: 1, scale: 1, rotate: -7, duration: .3, ease: 'back.out(2.2)' }, '>-.05');
+
+  gsap.fromTo('#work .sec-head', { '--draw': 0 }, { '--draw': 1, ease: 'none', scrollTrigger: { trigger: '#work .sec-head', start: 'top 92%', end: 'top 62%', scrub: true } });
+  // each case arrives redacted; the bar slides off, the name scrambles in, then the details fade up
+  $$('#work .cases li').forEach((li) => {
+    const name = li.querySelector('.name');
+    name.dataset.text = name.textContent;
+    gsap.timeline({ scrollTrigger: { trigger: li, start: 'top 94%', end: 'top 66%', scrub: true, onEnter: () => scramble(name, .5) } })
+      .fromTo(name, { '--redact': 1 }, { '--redact': 0, ease: 'power2.inOut' }, 0)
+      .fromTo(li.querySelectorAll('.no, .what, .yr'), { opacity: 0 }, { opacity: 1, ease: 'none' }, .35);
+  });
+}
 const navLinks = $$('.bar nav a');
 navLinks.forEach((a) => {
   ScrollTrigger.create({
@@ -846,12 +885,17 @@ navLinks.forEach((a) => {
   });
 });
 // re-ink the HUD: white while the profile is pinned, red once the flood has passed the middle of the screen
+// Worked out from the live scroll position against the trigger's measured start/end, and re-checked on every
+// scroll and refresh, so a refresh that lands mid-scroll can't leave a stale theme (that once blanked the wolf at the top).
 const FLOOD_AT = .86;
-const theme = (s) => {
-  body.classList.toggle('is-light', s.isActive && s.progress < FLOOD_AT);
-  body.classList.toggle('is-red', s.progress >= FLOOD_AT);
-};
-ScrollTrigger.create({ trigger: '#profile', start: 'top top', end: 'bottom bottom', onUpdate: theme, onToggle: theme, onRefresh: theme });
+function theme() {
+  if (!themeST) return;
+  const { start, end } = themeST, p = end > start ? (scrollY - start) / (end - start) : -1;
+  body.classList.toggle('is-light', p >= 0 && p < FLOOD_AT);
+  body.classList.toggle('is-red', p >= FLOOD_AT);
+}
+themeST = ScrollTrigger.create({ trigger: '#profile', start: 'top top', end: 'bottom bottom', onUpdate: theme, onToggle: theme, onRefresh: theme });
+ScrollTrigger.addEventListener('refresh', theme);
 
 /* ---------- profile (anime.js): power-on, claw marks, counter, traits, flood ---------- */
 const prof = $('#profile');
