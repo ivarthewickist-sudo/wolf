@@ -598,7 +598,7 @@ body.is-red .crt { opacity: .6; animation: none; }
     <div class="pl h1">HEARING<br><b>≈10 KM</b></div>
     <div class="pl h2">SMELL<br><b>≈100× YOURS</b></div>
     <div class="pl h3">TOP SPEED<br><b>≈60 KM/H</b></div>
-    <div class="teeth"><span id="teeth">0000</span><small>HOURS LEFT</small></div>
+    <div class="teeth"><span id="teeth">0000</span><small>MIN : SEC LEFT</small></div>
     <div class="traits">
       <div><span class="w">FERAL</span><span class="w">NOCTURNAL</span><span class="w">PATIENT</span><span class="w">PRECISE</span><span class="w">UNTAMED</span><span class="w">LOYAL</span><span class="w">TERRITORIAL</span><span class="w">CURIOUS</span><span class="w">RESTLESS</span><span class="w">SHARP</span><span class="w">QUIET</span><span class="w">HUNGRY</span></div>
       <div><span class="w">DISTINCTIVE</span><span class="w">FUNCTIONAL</span><span class="w">EXPERIMENTAL</span><span class="w">STRANGE</span><span class="w">DELIBERATE</span><span class="w">RAW</span><span class="w">CONCEPTUAL</span><span class="w">PHYSICAL</span><span class="w">CINEMATIC</span><span class="w">CRAFTED</span><span class="w">HONEST</span><span class="w">ALIVE</span></div>
@@ -950,10 +950,16 @@ sizeTerrain();
 addEventListener('resize', sizeTerrain);
 
 // DUMMY event start for now: replace with the next party's real start time.
-// The counter climbs to the hours left, scrubbed by scroll, like the rest of the profile.
+// The counter is a live minutes:seconds countdown to that start.
 const EVENT_START = new Date('2026-11-21T22:00:00+01:00');
-const hoursLeft = () => Math.max(0, Math.ceil((EVENT_START - Date.now()) / 36e5));
-const counter = { n: 0 }, teeth = $('#teeth');
+const teeth = $('#teeth');
+const countdownMMSS = () => {
+  const s = Math.max(0, Math.floor((EVENT_START - Date.now()) / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+const tickCountdown = () => { teeth.textContent = countdownMMSS(); };
+tickCountdown();
+setInterval(tickCountdown, 1000);
 createTimeline({
   defaults: { ease: 'linear' },
   autoplay: watch(onScroll({ target: prof, enter: 'top top', leave: 'bottom bottom', sync: true })), // Lenis already smooths the scroll; a second smoothing layer would lag
@@ -961,7 +967,6 @@ createTimeline({
 })
   .add('.sil', { scale: [.86, 1.04], translateY: ['6%', '0%'], duration: 700, ease: easeOut }, 0)
   .add('.claw', { scaleY: [0, 1], duration: 240, delay: stagger(70), ease: easeOut }, 40)
-  .add(counter, { n: [0, hoursLeft()], duration: 480, ease: easeOut, onUpdate: () => { teeth.textContent = pad(counter.n); } }, 140)
   .add('.traits .w', { opacity: [0, 1], duration: 40, delay: stagger(14) }, 240)
   .add('.claws', { rotate: [-32, -14], translateX: ['0vw', '-5vw'], duration: 520, ease: easeInOut }, 300)
   .add('.flood-black', { translateY: ['105%', '-6%'], duration: 210, ease: easeOut }, 760)
