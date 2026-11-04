@@ -980,7 +980,9 @@ async function connect() {
   sb = createClient(SUPABASE_URL, SUPABASE_KEY);
   return sb;
 }
-const here = () => location.origin + location.pathname; // email links bring people back to this page
+// email links bring people back to this page; a local preview (file: or data:) has no usable address,
+// and a data: page's "path" is the whole document, so leave it out and Supabase falls back to its Site URL
+const here = () => (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : undefined);
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
