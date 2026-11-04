@@ -265,15 +265,17 @@ main { position: relative; z-index: 2; }
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
   background: var(--chalk); color: var(--soot);
 }
-/* work → profile: a white flood, the twin of the red flood into the exit. Fixed over the page (under the bar),
-   it rises with the scroll as the profile arrives, fills the screen as it pins, then fades into the sheet.
-   GSAP owns its position (yPercent), so the in-pin flood's translateY is switched off here. */
-.white-flood { position: fixed; inset: 0; z-index: 4; pointer-events: none; visibility: hidden; }
-.white-flood .flood { transform: none; }
-.flood-ash path { fill: var(--ash); }
-.flood-ash .fill { background: var(--ash); }
-.flood-chalk path { fill: var(--chalk); }
-.flood-chalk .fill { background: var(--chalk); }
+/* work → profile: the white section arrives with a liquid top edge, the twin of the red flood into the exit.
+   The edge belongs to the section (absolute at its top, inside it), so no white shows before the section does;
+   it scrolls in with the section and slides away as the pin takes over. Two wave layers are flipped upside down
+   so they fill ABOVE the wave line: page black on top, an ash band, then the chalk sheet underneath.
+   wave() redraws them with the red flood's paths. */
+.profile-edge { position: absolute; left: 0; right: 0; top: 0; height: 20vh; z-index: 1; pointer-events: none; }
+.profile-edge svg { position: absolute; left: 0; width: 100%; top: 0; transform: scaleY(-1); }
+.profile-edge .ash { height: 100%; }
+.profile-edge .ash path { fill: var(--ash); }
+.profile-edge .void { height: 76%; }
+.profile-edge .void path { fill: var(--void); }
 #terrain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .claws-pos { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
 .claws { display: flex; gap: 3.2vw; transform: rotate(-32deg); }
@@ -579,6 +581,10 @@ body.is-red .crt { opacity: .6; animation: none; }
 </main>
 
 <section id="profile" aria-label="Subject profile">
+  <div class="profile-edge" aria-hidden="true">
+    <svg class="ash" viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg>
+    <svg class="void" viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg>
+  </div>
   <div class="pin">
     <canvas id="terrain" aria-hidden="true"></canvas>
     <div class="claws-pos" aria-hidden="true"><div class="claws"><i class="claw"></i><i class="claw"></i><i class="claw"></i></div></div>
@@ -685,10 +691,6 @@ body.is-red .crt { opacity: .6; animation: none; }
   </div>
 </div>
 
-<div class="white-flood" aria-hidden="true">
-  <div class="flood flood-ash"><svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg><div class="fill"></div></div>
-  <div class="flood flood-chalk"><svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg><div class="fill"></div></div>
-</div>
 <div class="crt" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="cur" aria-hidden="true"></div>
@@ -914,20 +916,6 @@ const prof = $('#profile');
 const observers = [];
 const watch = (o) => (observers.push(o), o);
 
-/* ---------- work → profile: white flood (GSAP, scrubbed) ----------
-   While the section scrolls in, an ash edge and the chalk flood behind it rise from the bottom over the
-   case files, reaching the top exactly as the profile pins; then the flood fades into the sheet beneath.
-   Their wavy edges are redrawn by wave() below, the same loop that moves the red flood. */
-if (!calm) {
-  gsap.timeline({ scrollTrigger: { trigger: prof, start: 'top bottom', end: 'top top', scrub: true } })
-    .set('.white-flood', { visibility: 'visible' }, 0)
-    // linear and slightly ahead of the incoming section's top edge, so the wave (not the sheet) is what you see arrive
-    .fromTo('.white-flood .flood-ash', { yPercent: 78 }, { yPercent: -12, duration: 1, ease: 'none' }, 0)
-    .fromTo('.white-flood .flood-chalk', { yPercent: 90 }, { yPercent: -2, duration: 1, ease: 'none' }, 0);
-  gsap.fromTo('.white-flood', { opacity: 1 }, { opacity: 0, ease: 'power1.out', scrollTrigger: { trigger: prof, start: 'top top', end: () => `+=${innerHeight * .2}`, scrub: true } });
-} else {
-  document.querySelector('.white-flood').remove(); // reduced motion: a plain cut, and no wave paths to animate
-}
 
 const tcv = $('#terrain'), tctx = tcv.getContext('2d');
 const ASH = getComputedStyle(document.documentElement).getPropertyValue('--ash').trim();
@@ -976,7 +964,7 @@ createTimeline({
   .add('.flood-red', { translateY: ['105%', '0%'], duration: 200, ease: easeOut }, 790);
 
 // the flood's top edge is a sum of sines, redrawn only while the profile is on screen
-const waves = $$('.flood path');
+const waves = $$('.flood path, .profile-edge path'); // the red flood and the white section's top edge
 let waveOn = false;
 function wave(ms) {
   const t = ms / 1000;
