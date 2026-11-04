@@ -148,6 +148,25 @@ main { position: relative; z-index: 2; }
   display: flex; align-items: flex-end; justify-content: center;
   padding-bottom: calc(var(--bar) + env(safe-area-inset-bottom, 0px) + 26px);
 }
+/* closed state: one HUD button under the wolf */
+.gate-open {
+  position: relative; display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px;
+  background: rgba(2, 3, 3, .8); border: 1px solid var(--line); color: var(--ink);
+  font: 700 10px var(--text); letter-spacing: .14em;
+}
+.gate-open::before, .gate-open::after { content: ""; position: absolute; width: 7px; height: 7px; border: 1px solid var(--blood); }
+.gate-open::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.gate-open::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+.gate-open:hover { border-color: var(--blood); }
+.gate-open .d { font-weight: 600; }
+/* open state: the terminal over a dimmed page, under the scanlines and the cursor */
+.gate {
+  position: fixed; inset: 0; z-index: 7; display: grid; place-items: center; overflow-y: auto;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(var(--bar) + 16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(2, 3, 3, .72); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.join-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.join-fields .wide { grid-column: 1 / -1; }
 .term {
   position: relative; width: min(430px, 100%); padding: 14px 16px 16px;
   display: grid; gap: 12px;
@@ -453,35 +472,9 @@ body.is-red .crt { opacity: .6; animation: none; }
 <main class="gut">
   <section class="story" id="index">
     <div class="hero">
-      <div class="term" id="term" data-state="out">
-        <div class="row"><span><span class="dot blink"></span>ACCESS TERMINAL</span><span class="d">PACK MEMBERS ONLY</span></div>
-
-        <div id="t-out">
-          <div class="tabs" role="group" aria-label="Access mode">
-            <button type="button" id="mode-in" aria-pressed="true">SIGN IN</button>
-            <button type="button" id="mode-join" aria-pressed="false">JOIN THE PACK</button>
-          </div>
-          <form id="t-form" novalidate>
-            <div class="field"><label for="t-email">CALLSIGN · EMAIL</label><input id="t-email" name="email" type="email" autocomplete="email" placeholder="you@domain.com" required></div>
-            <div class="field"><label for="t-pass">PASSPHRASE</label><input id="t-pass" name="password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="6" required></div>
-            <button class="btn" id="t-go" type="submit">AUTHENTICATE +</button>
-          </form>
-          <div class="row"><button type="button" class="linkish" id="t-reset">FORGOT PASSPHRASE</button><span class="d">ENCRYPTED IN TRANSIT</span></div>
-        </div>
-
-        <div id="t-in" hidden>
-          <div class="granted">ACCESS GRANTED</div>
-          <div class="row" style="margin-block: 10px 12px;"><span class="who" id="t-who"></span><span class="chip">CLEARANCE 07</span></div>
-          <div class="actions"><a class="btn" href="#classified">OPEN CLASSIFIED FILES +</a><button type="button" class="btn ghost" id="t-out-btn">SIGN OUT</button></div>
-        </div>
-
-        <form id="t-new" hidden novalidate>
-          <div class="field"><label for="t-newpass">NEW PASSPHRASE</label><input id="t-newpass" name="new-password" type="password" autocomplete="new-password" placeholder="6+ characters" minlength="6" required></div>
-          <button class="btn" type="submit">SET PASSPHRASE +</button>
-        </form>
-
-        <div class="status" id="t-status" role="status" aria-live="polite">AWAITING SIGNAL_</div>
-      </div>
+      <button class="gate-open" id="t-open" type="button" aria-haspopup="dialog" aria-controls="gate">
+        <span class="dot blink"></span><span id="t-open-label">MEMBER ACCESS</span><span class="d">+</span>
+      </button>
     </div>
     <div class="briefing" id="briefing" aria-label="Party briefing"></div>
     <h1>CASE FILE 07 · THE ONE THAT KEPT WATCHING</h1>
@@ -552,7 +545,7 @@ body.is-red .crt { opacity: .6; animation: none; }
       <li><span class="no">C3</span><span class="bars"><i style="width: 26%"></i><i style="width: 31%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
     </ol>
     <ol class="cases cl" id="cl-list" hidden></ol>
-    <div class="unlock" id="cl-msg"><span>THESE FILES OPEN FOR SIGNED-IN MEMBERS.</span><a href="#index">SIGN IN TO DECLASSIFY +</a></div>
+    <div class="unlock" id="cl-msg"><span>THESE FILES OPEN FOR SIGNED-IN MEMBERS.</span><a href="#index" data-open-term>SIGN IN TO DECLASSIFY +</a></div>
   </section>
 </main>
 
@@ -624,6 +617,44 @@ body.is-red .crt { opacity: .6; animation: none; }
     <a class="btn" href="#exit">DON'T CALL ME +</a>
   </div>
 </footer>
+
+<!-- member access: the terminal opens over the page from the MEMBER ACCESS button -->
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="t-title" hidden>
+  <div class="term" id="term" data-state="out">
+    <div class="row"><span id="t-title"><span class="dot blink"></span>ACCESS TERMINAL</span><button type="button" class="linkish" id="t-close" aria-label="Close the access terminal">CLOSE ×</button></div>
+
+    <div id="t-out">
+      <div class="tabs" role="group" aria-label="Access mode">
+        <button type="button" id="mode-in" aria-pressed="true">SIGN IN</button>
+        <button type="button" id="mode-join" aria-pressed="false">JOIN THE PACK</button>
+      </div>
+      <form id="t-form" novalidate>
+        <div class="join-fields" id="t-join" hidden>
+          <div class="field"><label for="t-first">FIRST NAME</label><input id="t-first" name="given-name" type="text" autocomplete="given-name" maxlength="60" placeholder="Ana"></div>
+          <div class="field"><label for="t-last">LAST NAME</label><input id="t-last" name="family-name" type="text" autocomplete="family-name" maxlength="60" placeholder="Wolf"></div>
+          <div class="field wide"><label for="t-phone">PHONE · FOR DOOR LIST</label><input id="t-phone" name="tel" type="tel" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="+49 151 2345 6789"></div>
+        </div>
+        <div class="field"><label for="t-email">CALLSIGN · EMAIL</label><input id="t-email" name="email" type="email" autocomplete="email" placeholder="you@domain.com" required></div>
+        <div class="field"><label for="t-pass">PASSPHRASE</label><input id="t-pass" name="password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="6" required></div>
+        <button class="btn" id="t-go" type="submit">AUTHENTICATE +</button>
+      </form>
+      <div class="row"><button type="button" class="linkish" id="t-reset">FORGOT PASSPHRASE</button><span class="d">ENCRYPTED IN TRANSIT</span></div>
+    </div>
+
+    <div id="t-in" hidden>
+      <div class="granted">ACCESS GRANTED</div>
+      <div class="row" style="margin-block: 10px 12px;"><span class="who" id="t-who"></span><span class="chip">CLEARANCE 07</span></div>
+      <div class="actions"><a class="btn" href="#classified">OPEN CLASSIFIED FILES +</a><button type="button" class="btn ghost" id="t-out-btn">SIGN OUT</button></div>
+    </div>
+
+    <form id="t-new" hidden novalidate>
+      <div class="field"><label for="t-newpass">NEW PASSPHRASE</label><input id="t-newpass" name="new-password" type="password" autocomplete="new-password" placeholder="6+ characters" minlength="6" required></div>
+      <button class="btn" type="submit">SET PASSPHRASE +</button>
+    </form>
+
+    <div class="status" id="t-status" role="status" aria-live="polite">AWAITING SIGNAL_</div>
+  </div>
+</div>
 
 <div class="crt" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
@@ -929,7 +960,7 @@ gsap.timeline({ defaults: { ease: 'none' } })
   .to(boot, { clipPath: 'inset(0 0 100% 0)', duration: calm ? .2 : .55, ease: 'power3.in' }) // exits leave fast
   .set(boot, { display: 'none' })
   .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .7, stagger: .04, ease: 'expo.out' }, '-=.3')
-  .from('#term', { opacity: 0, y: 14, duration: .8, ease: 'expo.out' }, '<.2');
+  .from('#t-open', { opacity: 0, y: 14, duration: .8, ease: 'expo.out' }, '<.2');
 </script>
 
 <!-- member access: kept in its own module so a Supabase outage never takes the rest of the site down -->
@@ -947,7 +978,39 @@ const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const easeOut = cubicBezier(.16, 1, .3, 1);
 const term = $('#term'), form = $('#t-form'), email = $('#t-email'), pass = $('#t-pass');
 const go = $('#t-go'), status = $('#t-status'), newForm = $('#t-new');
-let mode = 'in', sb = null, recovering = false;
+const gate = $('#gate'), opener = $('#t-open'), joinFields = $('#t-join');
+let mode = 'in', sb = null, recovering = false, justIn = false, lastFocus = null;
+
+/* ---------- the overlay: MEMBER ACCESS opens it; CLOSE, Esc or a click outside closes it ---------- */
+function openGate() {
+  if (!gate.hidden) return;
+  lastFocus = document.activeElement;
+  gate.hidden = false;
+  opener.setAttribute('aria-expanded', 'true');
+  if (!calm) {
+    animate(gate, { opacity: [0, 1], duration: 250, ease: 'linear' });
+    animate(term, { opacity: [0, 1], translateY: [16, 0], scale: [.97, 1], duration: 500, ease: easeOut });
+  }
+  const first = !newForm.hidden ? $('#t-newpass') : !$('#t-in').hidden ? $('#t-in a.btn') : mode === 'join' ? $('#t-first') : email;
+  first.focus();
+}
+function closeGate() {
+  if (gate.hidden) return;
+  gate.hidden = true;
+  opener.setAttribute('aria-expanded', 'false');
+  lastFocus?.focus?.({ preventScroll: true }); // don't yank the page back to the hero after OPEN CLASSIFIED FILES
+}
+opener.addEventListener('click', openGate);
+$('#t-close').addEventListener('click', closeGate);
+document.querySelectorAll('[data-open-term]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); openGate(); }));
+gate.addEventListener('click', (e) => { if (e.target === gate) closeGate(); });
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGate(); });
+document.addEventListener('focusin', (e) => { if (!gate.hidden && !gate.contains(e.target)) $('#t-close').focus(); }); // keep Tab inside the panel
+$('#t-in a.btn').addEventListener('click', closeGate);
+
+// 7–15 digits (the international maximum), with the usual separators and an optional leading +
+const validPhone = (p) => /^\+?[\d\s().-]{7,24}$/.test(p) && /^\d{7,15}$/.test(p.replace(/\D/g, ''));
+console.assert(validPhone('+49 151 2345 6789') && validPhone('(212) 555-0147') && !validPhone('12345') && !validPhone('call me'), 'phone check');
 
 const GLYPHS = '01<>/\\#%_=+X';
 let saying = null; // the message still scrambling in, cancelled by the next one so the newest always wins
@@ -993,7 +1056,8 @@ function setMode(next, quiet = false) {
   $('#mode-join').setAttribute('aria-pressed', String(mode === 'join'));
   pass.autocomplete = mode === 'in' ? 'current-password' : 'new-password';
   go.textContent = mode === 'in' ? 'AUTHENTICATE +' : 'JOIN THE PACK +';
-  if (!quiet) say(mode === 'in' ? 'AWAITING SIGNAL_' : 'NEW MEMBER. PICK A PASSPHRASE OF 6+ CHARACTERS.');
+  joinFields.hidden = mode !== 'join';
+  if (!quiet) say(mode === 'in' ? 'AWAITING SIGNAL_' : 'NEW MEMBER. NAME, PHONE, EMAIL, PASSPHRASE.');
 }
 $('#mode-in').addEventListener('click', () => setMode('in'));
 $('#mode-join').addEventListener('click', () => setMode('join'));
@@ -1012,6 +1076,12 @@ const here = () => (/^https?:$/.test(location.protocol) ? location.origin + loca
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const mail = email.value.trim(), pw = pass.value;
+  const first = $('#t-first').value.trim(), last = $('#t-last').value.trim(), phone = $('#t-phone').value.trim();
+  if (mode === 'join') {
+    if (!first) { say('ENTER YOUR FIRST NAME.', 'err'); shake(); $('#t-first').focus(); return; }
+    if (!last) { say('ENTER YOUR LAST NAME.', 'err'); shake(); $('#t-last').focus(); return; }
+    if (!validPhone(phone)) { say('ENTER A PHONE NUMBER WITH COUNTRY CODE, LIKE +49 151 2345 6789.', 'err'); shake(); $('#t-phone').focus(); return; }
+  }
   if (!mail || !email.checkValidity()) { say('ENTER A VALID EMAIL AS YOUR CALLSIGN.', 'err'); shake(); email.focus(); return; }
   if (pw.length < 6) { say('PASSPHRASE NEEDS AT LEAST 6 CHARACTERS.', 'err'); shake(); pass.focus(); return; }
   go.disabled = true;
@@ -1021,8 +1091,13 @@ form.addEventListener('submit', async (e) => {
     if (mode === 'in') {
       const { error } = await auth.signInWithPassword({ email: mail, password: pw });
       if (error) throw error;
+      justIn = true; // render() then closes the panel so the briefing can slide in
     } else {
-      const { data, error } = await auth.signUp({ email: mail, password: pw, options: { emailRedirectTo: here() } });
+      // name and phone ride along as sign-up metadata; a database trigger copies them into public.members
+      const { data, error } = await auth.signUp({
+        email: mail, password: pw,
+        options: { emailRedirectTo: here(), data: { first_name: first, last_name: last, phone } },
+      });
       if (error) throw error;
       // with email confirmation on (the Supabase default) there is no session until the link is clicked
       if (!data.session) { setMode('in', true); say('CHECK YOUR INBOX. OPEN THE CONFIRMATION LINK, THEN SIGN IN.', 'ok'); }
@@ -1179,20 +1254,26 @@ function render(user) {
   newForm.hidden = !recovering;
   const wasMember = document.body.classList.contains('member');
   document.body.classList.toggle('member', !!user && !recovering);
-  if (recovering) { say('RECOVERY LINK ACCEPTED. SET A NEW PASSPHRASE.', 'ok'); $('#t-newpass').focus(); return; }
+  if (recovering) { openGate(); say('RECOVERY LINK ACCEPTED. SET A NEW PASSPHRASE.', 'ok'); $('#t-newpass').focus(); return; }
   if (user) {
+    const name = (user.user_metadata?.first_name ?? '').trim().toUpperCase();
     $('#t-who').textContent = user.email;
-    say('WELCOME BACK TO THE PACK.', 'ok');
+    $('#t-open-label').textContent = name ? `MEMBER · ${name}` : 'MEMBER · CLEARANCE 07';
+    say(name ? `WELCOME BACK, ${name}.` : 'WELCOME BACK TO THE PACK.', 'ok');
     if (!calm) animate('#t-in .granted', { opacity: [0, 1], translateY: [8, 0], duration: 700, ease: easeOut });
+    // right after signing in, hold ACCESS GRANTED for a beat, then close so the panels arrive in view
+    const hold = justIn ? 1300 : 0;
+    if (justIn) { justIn = false; setTimeout(closeGate, hold - 100); }
     if (!wasMember && !calm) {
       // the panels slide in from the screen edges, then their rows arrive top to bottom
-      animate('.rail-l', { translateX: ['-100%', '0%'], duration: 700, ease: easeOut });
-      animate('.rail-r', { translateX: ['100%', '0%'], duration: 700, ease: easeOut });
-      animate('.rail .blk > *, .rail .coord', { opacity: [0, 1], duration: 500, delay: stagger(35, { start: 250 }), ease: easeOut });
+      animate('.rail-l', { translateX: ['-100%', '0%'], duration: 700, delay: hold, ease: easeOut });
+      animate('.rail-r', { translateX: ['100%', '0%'], duration: 700, delay: hold, ease: easeOut });
+      animate('.rail .blk > *, .rail .coord', { opacity: [0, 1], duration: 500, delay: stagger(35, { start: hold + 250 }), ease: easeOut });
     }
     loadParty().catch(() => put('title', 'BRIEFING UNAVAILABLE. REFRESH TO TRY AGAIN.'));
     declassify().catch(() => { count.textContent = 'LOCKED'; });
   } else {
+    $('#t-open-label').textContent = 'MEMBER ACCESS';
     clearParty();
     $('#briefing').replaceChildren();
     seal();

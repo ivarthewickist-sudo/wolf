@@ -31,6 +31,52 @@ select * from (values
 where not exists (select 1 from public.casefiles);
 
 
+-- Member profiles: the join form sends first name, last name and phone as sign-up metadata,
+-- and this trigger copies them into public.members. Each member can read only their own row;
+-- the owner sees everyone in Table Editor → members.
+create table if not exists public.members (
+  id uuid primary key references auth.users (id) on delete cascade,
+  email text,
+  first_name text,
+  last_name text,
+  phone text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.members enable row level security;
+grant select on public.members to authenticated;
+
+drop policy if exists "members read own profile" on public.members;
+create policy "members read own profile" on public.members
+  for select to authenticated using ((select auth.uid()) = id);
+
+-- security definer so the insert works during sign-up; empty search_path, so every name is schema-qualified.
+-- left() caps lengths instead of a check constraint, because a failing trigger would block the sign-up itself.
+create or replace function public.handle_new_member() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.members (id, email, first_name, last_name, phone)
+  values (
+    new.id, new.email,
+    left(new.raw_user_meta_data ->> 'first_name', 60),
+    left(new.raw_user_meta_data ->> 'last_name', 60),
+    left(new.raw_user_meta_data ->> 'phone', 24)
+  )
+  on conflict (id) do nothing;
+  return new;
+end $$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_member();
+
+-- Accounts made before this existed get a row too (names stay empty).
+insert into public.members (id, email, first_name, last_name, phone)
+select id, email, left(raw_user_meta_data ->> 'first_name', 60), left(raw_user_meta_data ->> 'last_name', 60), left(raw_user_meta_data ->> 'phone', 24)
+from auth.users
+on conflict (id) do nothing;
+
+
 -- Party briefing: the newest gathering (by start time) fills the HUD side panels for signed-in members.
 -- Add one row per party in Supabase → Table Editor → party; the site always shows the latest.
 create table if not exists public.party (
