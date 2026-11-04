@@ -84,9 +84,25 @@ a { color: inherit; text-decoration: none; }
 .rail {
   position: fixed; top: env(safe-area-inset-top, 0px); bottom: calc(var(--bar) + env(safe-area-inset-bottom, 0px)); z-index: 3;
   width: var(--rail); padding: 14px;
-  display: flex; flex-direction: column; justify-content: space-between;
+  display: none; flex-direction: column; justify-content: space-between; gap: 14px;
   font-size: 9.5px; line-height: 1.55;
+  overflow-y: auto; scrollbar-width: none;
 }
+/* the party briefing only exists for signed-in members */
+body.member .rail { display: flex; }
+.code { font: 700 13px/1.3 var(--text); letter-spacing: .06em; color: var(--ink); text-wrap: balance; }
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+.list li { display: grid; grid-template-columns: 2.4em 1fr; }
+ul.list li::before { content: "—"; color: var(--dim); }
+/* grid items don't advance the built-in list counter, so the rules keep their own */
+ol.list { counter-reset: rule; }
+ol.list li { counter-increment: rule; }
+ol.list li::before { content: counter(rule, decimal-leading-zero); color: var(--blood); font-family: var(--mono); }
+.countdown { display: grid; gap: 4px; }
+.countdown b { font: 900 22px/1 var(--display); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.rail a { color: var(--blood); }
+.rail a:hover { color: var(--ink); }
+.briefing { display: none; }
 .rail-l { left: 0; padding-left: max(14px, env(safe-area-inset-left, 0px)); border-right: 1px solid var(--line); }
 .rail-r { right: 0; padding-right: max(14px, env(safe-area-inset-right, 0px)); border-left: 1px solid var(--line); }
 .blk { display: grid; gap: 14px; }
@@ -348,7 +364,14 @@ body.is-red .crt { opacity: .6; animation: none; }
   .exit-in { padding-left: calc(var(--rail) + 20px); padding-right: calc(var(--rail) + 20px); }
 }
 @media (max-width: 899px) {
-  .rail { display: none; }
+  body.member .rail { display: none; }
+  /* phones get the briefing as cards under the terminal instead of side panels */
+  body.member .briefing { grid-column: 1 / -1; display: grid; gap: 14px; padding-block: 8vh 4vh; text-align: left; }
+  .briefing > aside {
+    display: flex; flex-direction: column; gap: 14px; padding: 14px 16px;
+    background: rgba(2, 3, 3, .8); border: 1px solid var(--line); font-size: 9.5px; line-height: 1.55;
+  }
+  .briefing a { color: var(--blood); }
   #wolf { width: min(92vw, 70vh); opacity: .5; }
   .story { grid-template-columns: 1fr; padding-block: 0 24vh; text-align: center; }
   .term { text-align: left; }
@@ -388,38 +411,43 @@ body.is-red .crt { opacity: .6; animation: none; }
 
 <canvas id="wolf" aria-hidden="true"></canvas>
 
-<aside class="rail rail-l" aria-hidden="true">
+<!-- Side panels: the party briefing. Empty in the HTML on purpose; filled from Supabase for signed-in members only. -->
+<aside class="rail rail-l" aria-label="Dress code and house rules">
   <div class="blk">
-    <div class="tick mark"><svg viewBox="0 0 100 60"><path d="M4 56 L24 6 L44 56 M56 56 L76 6 L96 56"/></svg></div>
-    <div class="row"><span class="chip">X <b id="px">0000</b></span><span class="chip">Y <b id="py">0000</b></span></div>
-    <div class="row"><span>TARGET ACQUIRED<br><span class="d">CANIS LUPUS</span></span><span>I CAN HEAR YOU<br>STAY STILL</span></div>
+    <div class="tick mark"><svg viewBox="0 0 100 60" aria-hidden="true"><path d="M4 56 L24 6 L44 56 M56 56 L76 6 L96 56"/></svg></div>
+    <div class="row"><span class="chip">DRESS CODE</span><span class="d">PROTOCOL 01</span></div>
+    <div class="code" data-p="dress_code">—</div>
+    <ul class="list" data-p="dress_notes"></ul>
   </div>
-  <div class="row coord"><span class="d">LAT</span><span>64°08'51"N</span></div>
+  <div class="row coord"><span class="d">MOON</span><span id="moon">0.00 —</span></div>
   <div class="blk">
-    <div class="row"><span>PROTOCOL<br>WARNING</span><span>HOWL<br><span class="red" id="sig">SIGNAL LOST</span></span></div>
-    <div class="row"><span>MOON</span><span id="moon">0.00 —</span></div>
-    <div class="row"><span>2026</span><span>PACK OF ONE</span></div>
+    <div class="row"><span class="chip">HOUSE RULES</span><span class="d"><span data-p="rules_count">00</span> RULES</span></div>
+    <ol class="list" data-p="rules"></ol>
     <div class="prog"><span>000</span><span class="track"><span class="fill" id="fill"></span></span><span>100</span></div>
   </div>
 </aside>
 
-<aside class="rail rail-r" aria-hidden="true">
+<aside class="rail rail-r" aria-label="Next party">
   <div class="blk">
-    <div class="tabs" id="tabs"><span class="on">ART DIR</span><span>MOTION</span><span>CODE</span></div>
+    <div class="row"><span class="chip">NEXT GATHERING</span><span class="red blink" data-p="state">●</span></div>
+    <div class="code" data-p="title">—</div>
     <dl class="log">
-      <dt>FIELD LOG</dt>
-      <dd><span>BRAND SYSTEMS</span><b>12</b></dd>
-      <dd><span>MOTION IDENTITY</span><b>08</b></dd>
-      <dd><span>CREATIVE CODE</span><b>21</b></dd>
-      <dd><span>INTERFACE</span><b>19</b></dd>
-      <dd class="old"><span>PHOTOGRAPHY</span><b>34</b></dd>
-      <dd class="old"><span>TYPE DESIGN</span><b>03</b></dd>
-      <dt>TERRITORY</dt>
-      <dd><span>EVERYWHERE AFTER DARK</span><b>∞</b></dd>
+      <dt>DATE</dt><dd><span data-p="date">—</span></dd>
+      <dt>DOORS</dt><dd><span data-p="doors">—</span></dd>
+      <dt>ENDS</dt><dd><span data-p="ends">—</span></dd>
+      <dt>VENUE</dt><dd><span data-p="venue">—</span></dd>
+      <dt>ADDRESS</dt><dd><span data-p="address">—</span></dd>
+      <dt>CITY</dt><dd><span data-p="city">—</span></dd>
     </dl>
+    <div class="d" data-p="info"></div>
   </div>
-  <div class="row coord"><span>21°56'33"W</span><span class="d">LON</span></div>
-  <div class="row"><span class="d">FILE 07 / OPEN</span><span class="blink">SCROLL</span></div>
+  <div class="row coord"><span data-p="lat">—</span><span data-p="lon">—</span></div>
+  <div class="blk">
+    <div class="countdown"><span class="d">T-MINUS</span><b data-p="countdown">--D --H --M</b></div>
+    <div class="row"><span>ENTRY</span><span data-p="entry">—</span></div>
+    <div class="row"><span>CAPACITY</span><span data-p="capacity">—</span></div>
+    <div class="row"><a data-p="maps" href="#" target="_blank" rel="noopener">OPEN IN MAPS ↗</a><span class="d">FILE 07 / OPEN</span></div>
+  </div>
 </aside>
 
 <main class="gut">
@@ -455,6 +483,7 @@ body.is-red .crt { opacity: .6; animation: none; }
         <div class="status" id="t-status" role="status" aria-live="polite">AWAITING SIGNAL_</div>
       </div>
     </div>
+    <div class="briefing" id="briefing" aria-label="Party briefing"></div>
     <h1>CASE FILE 07 · THE ONE THAT KEPT WATCHING</h1>
     <div class="col col-l">
       <span class="line">NOBODY SAW IT ARRIVE.</span>
@@ -704,7 +733,6 @@ const mvY = gsap.quickTo([cur, curL], 'y', { duration: .25, ease: 'power3' });
 addEventListener('pointermove', (e) => {
   mvX(e.clientX); mvY(e.clientY);
   state.mx = e.clientX / innerWidth; state.my = e.clientY / innerHeight;
-  $('#px').textContent = pad(e.clientX); $('#py').textContent = pad(e.clientY);
   curL.textContent = `X ${pad(e.clientX)} · Y ${pad(e.clientY)}`;
 });
 $$('a, button, .cases li, .eyeband').forEach((el) => {
@@ -882,9 +910,6 @@ $('#tz').textContent = `GMT${off >= 0 ? '+' : '-'}${Math.abs(off)}`;
 const tick = () => { $('#clock').textContent = new Date().toTimeString().slice(0, 8); };
 tick(); setInterval(tick, 1000);
 
-const tabs = $$('#tabs span');
-let tab = 0;
-setInterval(() => { tabs[tab].classList.remove('on'); tab = (tab + 1) % tabs.length; tabs[tab].classList.add('on'); }, 2400);
 
 $('#copy').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
@@ -1080,19 +1105,96 @@ async function declassify() {
   if (!calm && rows.length) animate([...list.children], { opacity: [0, 1], translateX: [-12, 0], duration: 600, delay: stagger(70), ease: easeOut });
 }
 
+/* ---------- party briefing: fills the side panels (and the phone cards) from the members-only party table ---------- */
+const pad2 = (n) => String(n).padStart(2, '0');
+function dms(v, pos, neg) {
+  const t = Math.round(Math.abs(v) * 3600);
+  return `${Math.floor(t / 3600)}°${pad2(Math.floor(t % 3600 / 60))}'${pad2(t % 60)}"${v >= 0 ? pos : neg}`;
+}
+function countdown(start, end, now = Date.now()) {
+  if (now >= end) return 'ENDED';
+  if (now >= start) return 'NOW LIVE';
+  const m = Math.floor((start - now) / 60000);
+  return `${pad2(Math.floor(m / 1440))}D ${pad2(Math.floor(m % 1440 / 60))}H ${pad2(m % 60)}M`;
+}
+console.assert(dms(64.1475, 'N', 'S') === `64°08'51"N` && dms(-21.9425, 'E', 'W') === `21°56'33"W`, 'dms format');
+console.assert(countdown(Date.UTC(2026, 0, 2, 3, 4), Date.UTC(2026, 0, 3), Date.UTC(2026, 0, 1)) === '01D 03H 04M', 'countdown');
+
+// English to match the site copy; times still show in the viewer's own time zone
+const day = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase();
+const clock = (d) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+const slots = (key) => document.querySelectorAll(`[data-p="${key}"]`);
+const put = (key, text) => slots(key).forEach((el) => { el.textContent = text ?? '—'; });
+const putList = (key, items) => slots(key).forEach((el) => el.replaceChildren(...items.map((t) => Object.assign(document.createElement('li'), { textContent: t }))));
+let partyTimer = 0;
+
+function clearParty() {
+  clearInterval(partyTimer);
+  ['title', 'date', 'doors', 'ends', 'venue', 'address', 'city', 'lat', 'lon', 'entry', 'capacity', 'dress_code'].forEach((k) => put(k, '—'));
+  put('info', ''); put('countdown', '--D --H --M'); put('rules_count', '00'); put('state', '●');
+  putList('dress_notes', []); putList('rules', []);
+  slots('maps').forEach((a) => { a.hidden = true; a.removeAttribute('href'); });
+}
+
+async function loadParty() {
+  // phones have no side panels, so copy them into cards under the terminal before filling
+  $('#briefing').replaceChildren(...['.rail-r', '.rail-l'].map((s) => {
+    const card = document.createElement('aside');
+    card.setAttribute('aria-label', $(s).getAttribute('aria-label'));
+    card.innerHTML = $(s).innerHTML;
+    card.querySelectorAll('.mark, .prog').forEach((el) => el.remove());
+    card.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+    card.querySelectorAll('[style]').forEach((el) => el.removeAttribute('style')); // drop the panels' mid-animation opacity
+    return card;
+  }));
+  clearParty();
+  put('title', 'DECRYPTING…');
+  const { data: p, error } = await sb.from('party').select('*').order('starts_at', { ascending: false }).limit(1).maybeSingle();
+  if (error || !p) { put('title', error ? 'BRIEFING UNAVAILABLE. REFRESH TO TRY AGAIN.' : 'NO GATHERING SCHEDULED YET.'); return; }
+
+  const start = new Date(p.starts_at), end = p.ends_at ? new Date(p.ends_at) : new Date(start.getTime() + 8 * 36e5);
+  put('title', p.title); put('date', day(start)); put('doors', clock(start)); put('ends', `${day(end)} · ${clock(end)}`);
+  put('venue', p.venue); put('address', p.address); put('city', p.city); put('info', p.info ?? '');
+  put('entry', p.entry); put('capacity', p.capacity == null ? '—' : String(p.capacity));
+  put('dress_code', p.dress_code);
+  putList('dress_notes', p.dress_notes ?? []); putList('rules', p.rules ?? []);
+  put('rules_count', pad2((p.rules ?? []).length));
+  if (p.lat != null && p.lon != null) {
+    put('lat', dms(p.lat, 'N', 'S')); put('lon', dms(p.lon, 'E', 'W'));
+    slots('maps').forEach((a) => { a.hidden = false; a.href = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`; });
+  }
+  const tick = () => {
+    const c = countdown(start, end);
+    put('countdown', c);
+    put('state', c === 'NOW LIVE' ? '● LIVE' : c === 'ENDED' ? '○ ENDED' : '● UPCOMING');
+  };
+  tick();
+  partyTimer = setInterval(tick, 30000);
+}
+
 function render(user) {
   term.dataset.state = recovering ? 'recover' : user ? 'in' : 'out';
   $('#t-out').hidden = recovering || !!user;
   $('#t-in').hidden = recovering || !user;
   newForm.hidden = !recovering;
-  $('#sig').textContent = user && !recovering ? 'MEMBER LINKED' : 'SIGNAL LOST';
+  const wasMember = document.body.classList.contains('member');
+  document.body.classList.toggle('member', !!user && !recovering);
   if (recovering) { say('RECOVERY LINK ACCEPTED. SET A NEW PASSPHRASE.', 'ok'); $('#t-newpass').focus(); return; }
   if (user) {
     $('#t-who').textContent = user.email;
     say('WELCOME BACK TO THE PACK.', 'ok');
     if (!calm) animate('#t-in .granted', { opacity: [0, 1], translateY: [8, 0], duration: 700, ease: easeOut });
+    if (!wasMember && !calm) {
+      // the panels slide in from the screen edges, then their rows arrive top to bottom
+      animate('.rail-l', { translateX: ['-100%', '0%'], duration: 700, ease: easeOut });
+      animate('.rail-r', { translateX: ['100%', '0%'], duration: 700, ease: easeOut });
+      animate('.rail .blk > *, .rail .coord', { opacity: [0, 1], duration: 500, delay: stagger(35, { start: 250 }), ease: easeOut });
+    }
+    loadParty().catch(() => put('title', 'BRIEFING UNAVAILABLE. REFRESH TO TRY AGAIN.'));
     declassify().catch(() => { count.textContent = 'LOCKED'; });
   } else {
+    clearParty();
+    $('#briefing').replaceChildren();
     seal();
   }
 }
