@@ -67,6 +67,10 @@ a { color: inherit; text-decoration: none; }
   background: var(--blood); color: var(--paper);
   font-size: 8.5px; text-align: center; line-height: 1.5;
   animation: bootout 0s 6s forwards; /* if the CDN never answers, the page still opens */
+  /* power-off: --ct squeezes it to a line, --cr then to a dot. Tweened as variables because the browser
+     rewrites clip-path insets into shorthand, which mispairs the numbers between two clip-path tweens. */
+  --ct: 0%; --cr: 0%;
+  clip-path: inset(var(--ct) var(--cr));
 }
 #boot svg { width: 92px; height: auto; overflow: visible; }
 #boot path { fill: none; stroke: var(--paper); stroke-width: 11; stroke-linecap: square; stroke-linejoin: miter; }
@@ -771,6 +775,13 @@ const BLOOD = ramp([[24, 0, 0], [120, 8, 4], [232, 41, 28], [255, 140, 110], [25
 
 const SAMPLE = 240;
 const pts = samplePoints();
+// Birth: every point starts in a tight clump where the boot screen collapses to its dot (the viewport centre,
+// 4% below the canvas centre because of the -54% offset) and flies out to its place, centre first.
+for (const p of pts) {
+  p.d = Math.min(1, Math.hypot(p.x, p.y) * 1.8);
+  p.sx = (Math.random() - .5) * .02; p.sy = .04 + (Math.random() - .5) * .02; p.sz = (Math.random() - .5) * .02;
+}
+state.assemble = calm ? 1 : 0; // 0 = all points in the dot, 1 = the finished wolf; the boot timeline drives it
 let W = 0, H = 0, dpr = 1;
 function resize() {
   dpr = Math.min(2, devicePixelRatio || 1);
@@ -791,14 +802,21 @@ function frame(ms) {
   const cy = Math.cos(state.ry), sy = Math.sin(state.ry), cx = Math.cos(state.rx), sx = Math.sin(state.rx);
   const sc = W * .92, R = state.hot > .5 ? BLOOD : HEAT, px = Math.max(1, Math.round(sc * 2 / SAMPLE * .62));
   ctx.clearRect(0, 0, W, H);
+  const A = state.assemble;
   for (const p of pts) {
-    const x = p.x * cy + p.z * sy;
-    let z = -p.x * sy + p.z * cy;
-    const y = p.y * cx - z * sx;
-    z = p.y * sx + z * cx;
+    let bx = p.x, by = p.y, bz = p.z, heat = 0;
+    if (A < 1) { // each point launches when the wave reaches it, lands with a quartic ease-out, and cools from white-hot
+      const f = Math.min(1, Math.max(0, (A - p.d * .45) / .55)), e = 1 - (1 - f) ** 4;
+      bx = p.sx + (p.x - p.sx) * e; by = p.sy + (p.y - p.sy) * e; bz = p.sz + (p.z - p.sz) * e;
+      heat = (1 - e) * .9;
+    }
+    const x = bx * cy + bz * sy;
+    let z = -bx * sy + bz * cy;
+    const y = by * cx - z * sx;
+    z = by * sx + z * cx;
     const k = 2 / (2 - z), X = W / 2 + x * sc * k, Y = H / 2 + y * sc * k;
     const shimmer = calm ? 0 : Math.sin(p.y * 12 + p.x * 4 - t * 1.6) * .18;
-    ctx.fillStyle = R[Math.min(63, Math.max(0, ((p.l * .5 + z * 1.1 + .05 + shimmer) * 63) | 0))];
+    ctx.fillStyle = R[Math.min(63, Math.max(0, ((p.l * .5 + z * 1.1 + .05 + shimmer + heat) * 63) | 0))];
     ctx.fillRect(X | 0, Y | 0, px, px);
   }
   if (!calm && Math.random() < .025) { // tear a horizontal band now and then
@@ -957,11 +975,18 @@ sizeTerrain();
 addEventListener('resize', sizeTerrain);
 
 const counter = { n: 0 }, teeth = $('#teeth');
-createTimeline({
-  defaults: { ease: 'linear' },
-  autoplay: watch(onScroll({ target: prof, enter: 'top top', leave: 'bottom bottom', sync: true })), // Lenis already smooths the scroll; a second smoothing layer would lag
-  onUpdate: (self) => queueTerrain(self.progress),
-})
+// Driven by GSAP's ScrollTrigger (already fed by Lenis) rather than anime's own onScroll:
+// anime's exact-sync mode never advanced under Lenis, which left the claws fully drawn and the counter at 0000.
+const profileTl = createTimeline({ defaults: { ease: 'linear' }, autoplay: false });
+// tweens that start later in the timeline don't render until reached, so give them their start state now
+utils.set('.claw', { scaleY: 0 });
+utils.set('.traits .w', { opacity: 0 });
+ScrollTrigger.create({
+  trigger: prof, start: 'top top', end: 'bottom bottom',
+  onUpdate: (s) => { profileTl.seek(s.progress * profileTl.duration); queueTerrain(s.progress); },
+  onRefresh: (s) => profileTl.seek(s.progress * profileTl.duration),
+});
+profileTl
   .add('.sil', { scale: [.86, 1.04], translateY: ['6%', '0%'], duration: 700, ease: easeOut }, 0)
   .add('.claw', { scaleY: [0, 1], duration: 240, delay: stagger(70), ease: easeOut }, 40)
   .add(counter, { n: [0, 42], duration: 480, ease: easeOut, onUpdate: () => { teeth.textContent = pad(counter.n); } }, 140)
@@ -1043,14 +1068,26 @@ const boot = $('#boot');
 boot.style.animation = 'none';
 const n = { v: 0 }, count = $('#boot .count'), mark = $('#boot path'), len = mark.getTotalLength();
 gsap.set(mark, { strokeDasharray: len, strokeDashoffset: len });
-gsap.timeline({ defaults: { ease: 'none' } })
+const bootTl = gsap.timeline({ defaults: { ease: 'none' } })
   .to(mark, { strokeDashoffset: 0, duration: calm ? .2 : 1.4, ease: 'power2.inOut' }, 0)
   .to(n, { v: 100, duration: calm ? .2 : 1.6, ease: 'power1.in', onUpdate: () => { count.textContent = `${pad(n.v, 3)}%`; } }, 0)
-  .to(boot, { opacity: 0, duration: .05, repeat: calm ? 0 : 3, yoyo: true })
-  .to(boot, { clipPath: 'inset(0 0 100% 0)', duration: calm ? .2 : .55, ease: 'power3.in' }) // exits leave fast
-  .set(boot, { display: 'none' })
-  .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .7, stagger: .04, ease: 'expo.out' }, '-=.3')
-  .from('#t-open', { opacity: 0, y: 14, duration: .8, ease: 'expo.out' }, '<.2');
+  .to(boot, { opacity: 0, duration: .05, repeat: calm ? 0 : 3, yoyo: true });
+if (calm) {
+  bootTl.to(boot, { opacity: 0, duration: .25 }).set(boot, { display: 'none' });
+} else {
+  // CRT power-off: the red screen turns white-hot and collapses to a line, then to a dot at the centre;
+  // the wolf is born from that dot (state.assemble), then the interface settles in around it
+  bootTl
+    .to('#boot > *', { opacity: 0, duration: .12 })
+    .to(boot, { '--ct': '49.7%', backgroundColor: '#ffffff', duration: .32, ease: 'power3.in' }, '<')
+    .to(boot, { '--cr': '49.7%', duration: .22, ease: 'power3.in' })
+    .to(boot, { opacity: 0, duration: .14, ease: 'power1.out' })
+    .set(boot, { display: 'none' })
+    .to(state, { assemble: 1, duration: 2.1, ease: 'none' }, '<-.08');
+}
+bootTl
+  .from('.rail .blk > *, .rail .coord, .bar', { opacity: 0, y: 6, duration: .7, stagger: .04, ease: 'expo.out' }, calm ? '-=.1' : '-=1.1')
+  .from('#t-open', { opacity: 0, y: 14, duration: .8, ease: 'expo.out' }, '<.25');
 </script>
 
 <!-- member access: kept in its own module so a Supabase outage never takes the rest of the site down -->
