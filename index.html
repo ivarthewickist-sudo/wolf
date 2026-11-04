@@ -78,7 +78,8 @@ a { color: inherit; text-decoration: none; }
 #wolf {
   position: fixed; left: 50%; top: 50%; z-index: 1;
   width: min(66vh, 50vw); aspect-ratio: 1; max-width: 100%;
-  transform: translate(-50%, -54%) scale(var(--ws, 1)); /* --ws: the wolf steps back behind the case index */
+  --ws: 1; /* the wolf's size: steps back behind the case index. Declared so GSAP never reads it as 0 */
+  transform: translate(-50%, -54%) scale(var(--ws));
   pointer-events: none;
   filter: drop-shadow(2px 0 rgba(255, 0, 70, .55)) drop-shadow(-2px 0 rgba(0, 210, 255, .45));
 }
@@ -261,10 +262,18 @@ main { position: relative; z-index: 2; }
 /* profile: pinned white specimen sheet */
 #profile { position: relative; z-index: 2; height: 360vh; }
 .pin {
-  --open: 1;
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
   background: var(--chalk); color: var(--soot);
-  clip-path: inset(calc((1 - var(--open)) * 49.6%) 0);
+}
+/* work → profile: the screen switches on like a CRT. Fixed over the page (under the bar), driven by scroll:
+   dark screen, a dot, a scan line, the picture opening from the line, then a flash settling into the sheet. */
+.crt-on { position: fixed; inset: 0; z-index: 4; pointer-events: none; visibility: hidden; }
+.crt-on .dark { position: absolute; inset: 0; background: var(--void); opacity: 0; }
+.crt-on .band { position: absolute; inset: 0; background: var(--paper); clip-path: inset(50% 0% 50% 0%); }
+.crt-on .beam {
+  position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px;
+  background: var(--paper); transform: scaleX(.004); opacity: 0;
+  box-shadow: 0 0 14px 3px rgba(255, 255, 255, .7), 0 0 60px 12px rgba(218, 236, 241, .3);
 }
 #terrain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .claws-pos { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
@@ -677,6 +686,7 @@ body.is-red .crt { opacity: .6; animation: none; }
   </div>
 </div>
 
+<div class="crt-on" aria-hidden="true"><i class="dark"></i><i class="beam"></i><i class="band"></i></div>
 <div class="crt" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="cur" aria-hidden="true"></div>
@@ -856,7 +866,7 @@ if (!calm) setInterval(() => {
 const fill = $('#fill');
 let themeST = null; // the profile's theme trigger, created below; theme() is a no-op until then
 ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { state.scroll = s.progress; fill.style.transform = `scaleX(${s.progress})`; theme(); } });
-gsap.to('#wolf', { opacity: .16, '--ws': calm ? 1 : .72, ease: 'none', scrollTrigger: { trigger: '#work', start: 'top 75%', end: 'top 20%', scrub: true } });
+gsap.fromTo('#wolf', { opacity: 1, '--ws': 1 }, { opacity: .16, '--ws': calm ? 1 : .72, ease: 'none', scrollTrigger: { trigger: '#work', start: 'top 75%', end: 'top 20%', scrub: true } });
 
 /* ---------- story → work: the file redacts itself, is stamped CLOSED, and the case index unredacts ---------- */
 if (!calm) {
@@ -902,10 +912,19 @@ const prof = $('#profile');
 const observers = [];
 const watch = (o) => (observers.push(o), o);
 
-animate('#profile .pin', {
-  '--open': [0, 1], ease: easeOut,
-  autoplay: watch(onScroll({ target: prof, enter: 'bottom top', leave: 'top top', sync: true })),
-});
+/* ---------- work → profile: CRT power-on (GSAP, scrubbed) ----------
+   While the section scrolls in: the page goes dark, a dot appears, snaps into a scan line, and the
+   picture opens from the line until it fills the screen exactly as the profile pins. Then the flash
+   fades over the first stretch of the pin, revealing the sheet underneath. */
+if (!calm) {
+  gsap.timeline({ scrollTrigger: { trigger: prof, start: 'top bottom', end: 'top top', scrub: true } })
+    .set('.crt-on', { visibility: 'visible' }, 0)
+    .fromTo('.crt-on .dark', { opacity: 0 }, { opacity: .96, duration: .3, ease: 'power1.in' }, 0)
+    .fromTo('.crt-on .beam', { opacity: 0, scaleX: .004 }, { opacity: 1, duration: .06, ease: 'none' }, .26)
+    .to('.crt-on .beam', { scaleX: 1, duration: .2, ease: 'expo.in' }, .32)
+    .fromTo('.crt-on .band', { clipPath: 'inset(50% 0% 50% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: .44, ease: 'power3.in' }, .56);
+  gsap.fromTo('.crt-on', { opacity: 1 }, { opacity: 0, ease: 'power1.out', scrollTrigger: { trigger: prof, start: 'top top', end: () => `+=${innerHeight * .18}`, scrub: true } });
+}
 
 const tcv = $('#terrain'), tctx = tcv.getContext('2d');
 const ASH = getComputedStyle(document.documentElement).getPropertyValue('--ash').trim();
