@@ -42,7 +42,10 @@ body.is-red { --ink: #0a0000; --ink-on: #e8291c; --dim: #5e0b05; --line: rgba(0,
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { scroll-behavior: smooth; }
+/* Lenis' recommended CSS (lenis@1.3.27/dist/lenis.css); Lenis owns smooth scrolling, so no scroll-behavior here */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent] { overscroll-behavior: contain; }
 body {
   margin: 0;
   background: var(--void) radial-gradient(var(--grid) .6px, transparent .9px) 0 0 / 3px 3px;
@@ -431,7 +434,7 @@ body.is-red .crt { opacity: .6; animation: none; }
 <canvas id="wolf" aria-hidden="true"></canvas>
 
 <!-- Side panels: the party briefing. Empty in the HTML on purpose; filled from Supabase for signed-in members only. -->
-<aside class="rail rail-l" aria-label="Dress code and house rules">
+<aside class="rail rail-l" aria-label="Dress code and house rules" data-lenis-prevent>
   <div class="blk">
     <div class="tick mark"><svg viewBox="0 0 100 60" aria-hidden="true"><path d="M4 56 L24 6 L44 56 M56 56 L76 6 L96 56"/></svg></div>
     <div class="row"><span class="chip">DRESS CODE</span><span class="d">PROTOCOL 01</span></div>
@@ -446,7 +449,7 @@ body.is-red .crt { opacity: .6; animation: none; }
   </div>
 </aside>
 
-<aside class="rail rail-r" aria-label="Next party">
+<aside class="rail rail-r" aria-label="Next party" data-lenis-prevent>
   <div class="blk">
     <div class="row"><span class="chip">NEXT GATHERING</span><span class="red blink" data-p="state">●</span></div>
     <div class="code" data-p="title">—</div>
@@ -619,7 +622,7 @@ body.is-red .crt { opacity: .6; animation: none; }
 </footer>
 
 <!-- member access: the terminal opens over the page from the MEMBER ACCESS button -->
-<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="t-title" hidden>
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="t-title" data-lenis-prevent hidden>
   <div class="term" id="term" data-state="out">
     <div class="row"><span id="t-title"><span class="dot blink"></span>ACCESS TERMINAL</span><button type="button" class="linkish" id="t-close" aria-label="Close the access terminal">CLOSE ×</button></div>
 
@@ -665,13 +668,15 @@ body.is-red .crt { opacity: .6; animation: none; }
 { "imports": {
   "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js",
   "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/",
-  "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.4.1/dist/bundles/anime.esm.min.js"
+  "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.4.1/dist/bundles/anime.esm.min.js",
+  "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.27/dist/lenis.mjs"
 } }
 </script>
 <script type="module">
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
 import { animate, createTimeline, onScroll, stagger, createAnimatable, splitText, cubicBezier, utils } from 'animejs';
+import Lenis from 'lenis';
 gsap.registerPlugin(ScrollTrigger);
 
 const $ = (s) => document.querySelector(s);
@@ -680,6 +685,30 @@ const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const pad = (n, l = 4) => String(Math.max(0, n | 0)).padStart(l, '0');
 const body = document.body;
 const easeOut = cubicBezier(.16, 1, .3, 1); // arrivals
+
+/* ---------- smooth scroll: every scroll-driven transition below rides on Lenis ---------- */
+// Lenis moves the real window scroll, so ScrollTrigger and anime.js onScroll keep reading it as usual.
+// It runs on GSAP's ticker so the scroll and the scrubbed animations update in the same frame.
+const lenis = calm ? null : new Lenis({ lerp: .09, wheelMultiplier: .9 });
+if (lenis) {
+  lenis.on('scroll', ScrollTrigger.update);
+  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  gsap.ticker.lagSmoothing(0);
+  // the login overlay freezes the page behind it
+  document.addEventListener('gate:open', () => lenis.stop());
+  document.addEventListener('gate:close', () => lenis.start());
+}
+// in-page links glide through the page instead of jumping, so the section transitions play on the way
+const glide = (t) => 1 - Math.pow(1 - t, 4);
+document.addEventListener('click', (e) => {
+  const a = e.target.closest?.('a[href^="#"]');
+  if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+  const target = document.querySelector(a.getAttribute('href'));
+  if (!target) return;
+  e.preventDefault();
+  if (lenis) lenis.scrollTo(target, { duration: 1.8, easing: glide });
+  else target.scrollIntoView();
+});
 const easeInOut = cubicBezier(.65, 0, .35, 1); // moves between two states
 
 /* ---------- wolf: a colour-emoji glyph sampled into a rotating thermal point cloud ---------- */
@@ -869,7 +898,7 @@ addEventListener('resize', sizeTerrain);
 const counter = { n: 0 }, teeth = $('#teeth');
 createTimeline({
   defaults: { ease: 'linear' },
-  autoplay: watch(onScroll({ target: prof, enter: 'top top', leave: 'bottom bottom', sync: calm ? true : .2 })),
+  autoplay: watch(onScroll({ target: prof, enter: 'top top', leave: 'bottom bottom', sync: true })), // Lenis already smooths the scroll; a second smoothing layer would lag
   onUpdate: (self) => queueTerrain(self.progress),
 })
   .add('.sil', { scale: [.86, 1.04], translateY: ['6%', '0%'], duration: 700, ease: easeOut }, 0)
@@ -987,6 +1016,7 @@ function openGate() {
   lastFocus = document.activeElement;
   gate.hidden = false;
   opener.setAttribute('aria-expanded', 'true');
+  document.dispatchEvent(new Event('gate:open'));
   if (!calm) {
     animate(gate, { opacity: [0, 1], duration: 250, ease: 'linear' });
     animate(term, { opacity: [0, 1], translateY: [16, 0], scale: [.97, 1], duration: 500, ease: easeOut });
@@ -998,6 +1028,7 @@ function closeGate() {
   if (gate.hidden) return;
   gate.hidden = true;
   opener.setAttribute('aria-expanded', 'false');
+  document.dispatchEvent(new Event('gate:close'));
   lastFocus?.focus?.({ preventScroll: true }); // don't yank the page back to the hero after OPEN CLASSIFIED FILES
 }
 opener.addEventListener('click', openGate);
