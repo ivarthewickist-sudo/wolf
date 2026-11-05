@@ -77,6 +77,65 @@ from auth.users
 on conflict (id) do nothing;
 
 
+-- Invite-only joining: the site offers only SIGN IN; new members join through a link like
+-- https://ivarthewickist-sudo.github.io/wolf/?invite=CODE. The site sends the code with the sign-up,
+-- and the trigger below refuses any new account without a valid, unused, unexpired code, so the rule
+-- holds even for someone calling Supabase directly with the public key.
+-- Manage codes in Table Editor -> invites (max_uses = how many people one link admits).
+create table if not exists public.invites (
+  code text primary key,
+  note text,
+  max_uses int not null default 1,
+  uses int not null default 0,
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table public.invites enable row level security; -- no policies: the site can't read or edit codes
+
+-- Lets the site check a link before showing the join form; reveals only yes/no for one exact code.
+create or replace function public.invite_ok(c text) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.invites where code = c and uses < max_uses and (expires_at is null or expires_at > now()));
+$$;
+grant execute on function public.invite_ok(text) to anon, authenticated;
+
+-- Runs inside the sign-up insert, so a refused code rolls the whole account back.
+-- Users you add yourself in Authentication -> Users with "Auto Confirm User" arrive already confirmed and
+-- skip the check. Public sign-ups arrive unconfirmed because email confirmation is on: keep it on, since
+-- turning it off would let unconfirmed-at-insert sign-ups through this bypass.
+create or replace function public.check_invite() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if new.email_confirmed_at is not null then return new; end if;
+  update public.invites set uses = uses + 1
+   where code = new.raw_user_meta_data ->> 'invite'
+     and uses < max_uses and (expires_at is null or expires_at > now());
+  if not found then raise exception 'invite required'; end if;
+  return new;
+end $$;
+
+drop trigger if exists before_auth_user_created on auth.users;
+create trigger before_auth_user_created before insert on auth.users
+  for each row execute function public.check_invite();
+
+-- Record which link each member used.
+alter table public.members add column if not exists invite text;
+create or replace function public.handle_new_member() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.members (id, email, first_name, last_name, phone, invite)
+  values (
+    new.id, new.email,
+    left(new.raw_user_meta_data ->> 'first_name', 60),
+    left(new.raw_user_meta_data ->> 'last_name', 60),
+    left(new.raw_user_meta_data ->> 'phone', 24),
+    left(new.raw_user_meta_data ->> 'invite', 40)
+  )
+  on conflict (id) do nothing;
+  return new;
+end $$;
+
+
 -- Party briefing: the newest gathering (by start time) fills the HUD side panels for signed-in members.
 -- Add one row per party in Supabase → Table Editor → party; the site always shows the latest.
 create table if not exists public.party (

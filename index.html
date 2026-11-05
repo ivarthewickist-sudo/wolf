@@ -659,10 +659,8 @@ body.is-red .crt { opacity: .6; animation: none; }
     <div class="row"><span id="t-title"><span class="dot blink"></span>ACCESS TERMINAL</span><button type="button" class="linkish" id="t-close" aria-label="Close the access terminal">CLOSE ×</button></div>
 
     <div id="t-out">
-      <div class="tabs" role="group" aria-label="Access mode">
-        <button type="button" id="mode-in" aria-pressed="true">SIGN IN</button>
-        <button type="button" id="mode-join" aria-pressed="false">JOIN THE PACK</button>
-      </div>
+      <!-- members sign in here; joining only opens from an invite link (?invite=CODE) -->
+      <div class="row" id="t-invite" hidden><span class="chip">INVITATION ACCEPTED</span><span class="d" id="t-invite-code"></span></div>
       <form id="t-form" novalidate>
         <div class="join-fields" id="t-join" hidden>
           <div class="field"><label for="t-first">FIRST NAME</label><input id="t-first" name="given-name" type="text" autocomplete="given-name" maxlength="60" placeholder="Ana"></div>
@@ -673,7 +671,7 @@ body.is-red .crt { opacity: .6; animation: none; }
         <div class="field"><label for="t-pass">PASSPHRASE</label><input id="t-pass" name="password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="6" required></div>
         <button class="btn" id="t-go" type="submit">AUTHENTICATE +</button>
       </form>
-      <div class="row"><button type="button" class="linkish" id="t-reset">FORGOT PASSPHRASE</button><span class="d">ENCRYPTED IN TRANSIT</span></div>
+      <div class="row"><button type="button" class="linkish" id="t-reset">FORGOT PASSPHRASE</button><button type="button" class="linkish" id="t-to-signin" hidden>ALREADY A MEMBER? SIGN IN</button><span class="d">ENCRYPTED IN TRANSIT</span></div>
     </div>
 
     <div id="t-in" hidden>
@@ -1144,17 +1142,43 @@ function explain(e) {
   return `SOMETHING FAILED (${String(e?.code || e?.message || 'UNKNOWN').toUpperCase()}). TRY AGAIN.`;
 }
 
+// Sign-in is the only mode the terminal offers; join mode exists only while a valid invite link is open.
 function setMode(next, quiet = false) {
-  mode = next;
-  $('#mode-in').setAttribute('aria-pressed', String(mode === 'in'));
-  $('#mode-join').setAttribute('aria-pressed', String(mode === 'join'));
+  mode = next === 'join' && invite ? 'join' : 'in';
   pass.autocomplete = mode === 'in' ? 'current-password' : 'new-password';
   go.textContent = mode === 'in' ? 'AUTHENTICATE +' : 'JOIN THE PACK +';
   joinFields.hidden = mode !== 'join';
-  if (!quiet) say(mode === 'in' ? 'AWAITING SIGNAL_' : 'NEW MEMBER. NAME, PHONE, EMAIL, PASSPHRASE.');
+  $('#t-invite').hidden = mode !== 'join';
+  $('#t-reset').hidden = mode === 'join';
+  $('#t-to-signin').hidden = mode !== 'join';
+  if (!quiet) say(mode === 'in' ? 'AWAITING SIGNAL_' : 'INVITATION ACCEPTED. NAME, PHONE, EMAIL, PASSPHRASE.');
 }
-$('#mode-in').addEventListener('click', () => setMode('in'));
-$('#mode-join').addEventListener('click', () => setMode('join'));
+$('#t-to-signin').addEventListener('click', () => setMode('in'));
+
+/* ---------- invite links: ?invite=CODE opens the terminal in join mode ----------
+   The site only asks Supabase whether the code is usable (invite_ok); the real gate is the
+   check_invite trigger in supabase.sql, which refuses any sign-up without a valid code. */
+const query = new URLSearchParams(location.search);
+let invite = (query.get('invite') || '').trim().slice(0, 40) || null;
+if (invite && /^https?:$/.test(location.protocol)) {
+  query.delete('invite'); // keep the code out of the address bar, history and screenshots
+  history.replaceState(null, '', location.pathname + (query.size ? `?${query}` : '') + location.hash);
+}
+const BAD_INVITE = 'THAT INVITE LINK IS INVALID, USED UP OR EXPIRED. ASK FOR A NEW ONE.';
+async function acceptInvite() {
+  openGate();
+  say('CHECKING INVITATION…');
+  try {
+    const { data: ok, error } = await sb.rpc('invite_ok', { c: invite });
+    if (error) throw error;
+    if (!ok) { invite = null; setMode('in', true); say(BAD_INVITE, 'err'); shake(); return; }
+    $('#t-invite-code').textContent = invite;
+    setMode('join');
+    $('#t-first').focus();
+  } catch (err) {
+    invite = null; setMode('in', true); say(explain(err), 'err');
+  }
+}
 
 async function connect() {
   if (sb) return sb;
@@ -1190,15 +1214,18 @@ form.addEventListener('submit', async (e) => {
       // name and phone ride along as sign-up metadata; a database trigger copies them into public.members
       const { data, error } = await auth.signUp({
         email: mail, password: pw,
-        options: { emailRedirectTo: here(), data: { first_name: first, last_name: last, phone } },
+        options: { emailRedirectTo: here(), data: { first_name: first, last_name: last, phone, invite } },
       });
       if (error) throw error;
       // with email confirmation on (the Supabase default) there is no session until the link is clicked
+      invite = null; // this visitor's invite is spent; the terminal goes back to sign-in only
       if (!data.session) { setMode('in', true); say('CHECK YOUR INBOX. OPEN THE CONFIRMATION LINK, THEN SIGN IN.', 'ok'); }
     }
     pass.value = '';
   } catch (err) {
-    say(explain(err), 'err');
+    // the check_invite trigger refuses the insert, which Supabase reports as a generic database error
+    const refused = mode === 'join' && (err?.code === 'unexpected_failure' || /database error saving new user/i.test(err?.message ?? ''));
+    say(refused ? BAD_INVITE : explain(err), 'err');
     shake();
   } finally {
     go.disabled = false;
@@ -1380,7 +1407,10 @@ if (SUPABASE_URL && SUPABASE_KEY) {
       if (event === 'PASSWORD_RECOVERY') recovering = true;
       if (event === 'SIGNED_OUT') recovering = false;
       // Supabase asks that the callback not await its own calls, so render on the next tick
-      setTimeout(() => render(session?.user ?? null), 0);
+      setTimeout(() => {
+        render(session?.user ?? null);
+        if (event === 'INITIAL_SESSION' && invite && !session) acceptInvite(); // only guests are offered the join form
+      }, 0);
     }))
     .catch(() => say('NO SIGNAL FROM SUPABASE. REFRESH TO TRY AGAIN.', 'err'));
 }
