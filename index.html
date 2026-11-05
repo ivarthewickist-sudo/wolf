@@ -234,7 +234,16 @@ main { position: relative; z-index: 2; }
 .stamp b { font: 900 clamp(34px, 5vw, 64px)/1 var(--display); letter-spacing: .06em; }
 
 /* work */
-#work { padding-block: 16vh 22vh; }
+#work { position: relative; isolation: isolate; padding-block: 16vh 22vh; }
+/* the party footage behind the case index: full-bleed, dim, slightly soft, fading out at the top and bottom
+   so it sits in the dark page instead of reading as a box. The burned-in caption was painted out of the file. */
+.work-bg {
+  position: absolute; z-index: -1; top: 0; bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%);
+  object-fit: cover; pointer-events: none;
+  opacity: .26; filter: blur(2px) saturate(.75);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+}
 .sec-head { position: relative; display: flex; justify-content: space-between; gap: 16px; padding-bottom: 12px; font-size: 9.5px; }
 .sec-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); transform: scaleX(var(--draw, 1)); transform-origin: left; }
 .cases { list-style: none; margin: 0; padding: 0; }
@@ -558,6 +567,7 @@ body.is-red .crt { opacity: .6; animation: none; }
   </section>
 
   <section id="work">
+    <video class="work-bg" src="assets/den-loop.webm" poster="assets/den-poster.jpg" muted loop playsinline preload="metadata" aria-hidden="true"></video>
     <div class="sec-head"><span>CASE INDEX</span><span class="d">05 FILES · SORTED BY LAST SIGHTING</span></div>
     <ol class="cases">
       <li><span class="no">01</span><span class="name">NIGHT SHIFT</span><span class="what">BRAND SYSTEM</span><span class="yr">2026</span></li>
@@ -865,6 +875,14 @@ if (!calm) setInterval(() => {
 }, 3200);
 
 /* ---------- scroll wiring ---------- */
+/* ---------- WORK background footage: plays only while on screen; reduced motion keeps the still poster ---------- */
+const workBg = $('.work-bg');
+if (!calm) {
+  // the recorded WebM carries no duration, so restart it by hand in case loop doesn't fire
+  workBg.addEventListener('ended', () => { workBg.currentTime = 0; workBg.play().catch(() => {}); });
+  new IntersectionObserver(([e]) => { if (e.isIntersecting) workBg.play().catch(() => {}); else workBg.pause(); }, { rootMargin: '200px' }).observe(workBg);
+}
+
 const fill = $('#fill');
 let themeST = null; // the profile's theme trigger, created below; theme() is a no-op until then
 ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { state.scroll = s.progress; fill.style.transform = `scaleX(${s.progress})`; theme(); } });
