@@ -1176,7 +1176,9 @@ async function acceptInvite() {
     setMode('join');
     $('#t-first').focus();
   } catch (err) {
-    invite = null; setMode('in', true); say(explain(err), 'err');
+    // PGRST202: invite_ok() doesn't exist, i.e. the invite section of supabase.sql hasn't been run in this project
+    invite = null; setMode('in', true);
+    say(err?.code === 'PGRST202' ? "INVITES AREN'T SET UP YET. THE SITE OWNER NEEDS TO RUN THE INVITE SQL IN SUPABASE." : explain(err), 'err');
   }
 }
 
