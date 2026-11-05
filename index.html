@@ -1099,7 +1099,8 @@ async function startHead3d() {
   const dissolve = { value: 1 }, live = { value: 0 }, clock = { value: 0 }, eye = { value: new THREE.Vector4() };
   // double-sided so the inside of the skull shows, dark, through the eye holes and the other holes
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .85, metalness: 0, flatShading: true, side: THREE.DoubleSide });
-  mat.onBeforeCompile = (sh) => {
+  // every part (skin, hair, chrome) gets the same holes
+  const patch = (m) => { m.onBeforeCompile = (sh) => {
     sh.uniforms.uDissolve = dissolve;
     sh.uniforms.uLive = live;
     sh.uniforms.uTime = clock;
@@ -1122,9 +1123,10 @@ float wn(vec3 x) {
       // dn: the arrival/exit holes. lv: a second, drifting noise whose few low points open and close over time.
       .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vObj * 4.) + .35 * wn(vObj * 11.);\n  float lv = wn(vObj * 5. + vec3(0., uTime * .12, uTime * .07));\n  vec2 ed = (vec2(abs(vObj.x), vObj.y) - uEye.xy) / uEye.zw;\n  if (dn < uDissolve || lv < uLive || (vObj.z > .1 && dot(ed, ed) < 1.)) discard;')
       .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if ((uDissolve > .001 && dn < uDissolve + .05) || (uLive > .001 && lv < uLive + .03)) gl_FragColor.rgb = vec3(.91, .16, .11);\n  if (!gl_FrontFacing) gl_FragColor.rgb *= .12;');
-  };
+  }; return m; };
+  patch(mat);
   // a human head sculpted from a sphere: egg-shaped skull, tapering jaw, brow, nose, chin, ears and sunken eye sockets
-  const sculpt = (x, y, z) => {
+  const sculpt = (x, y, z, sockets = 1) => {
     const g = (a, b, c, d) => Math.exp(-(a * a) / (b * b) - (c * c) / (d * d)), front = Math.max(0, z) ** 2;
     let X = x * .36, Y = y * .58, Z = z * .43 * (z > 0 ? .9 : 1);
     if (y < 0) { X *= 1 - .3 * (-y) ** 1.6; Z *= 1 - .15 * y * y; } // jaw narrows to the chin
@@ -1132,7 +1134,7 @@ float wn(vec3 x) {
       + .11 * g(x, .1, y + .12, .16) * z * z // nose
       + .04 * g(x, .22, y + .78, .12) // chin
       - .015 * g(x, .22, y + .5, .03) // mouth line
-      - .07 * g(Math.abs(x) - .38, .16, y - .12, .12)); // eye sockets
+      - .07 * sockets * g(Math.abs(x) - .38, .16, y - .12, .12)); // eye sockets
     if (Math.abs(x) > .8) X += Math.sign(x) * .05 * g(y - .05, .15, z + .05, .2); // ears
     return [X, Y, Z];
   };
@@ -1140,9 +1142,68 @@ float wn(vec3 x) {
   for (let i = 0; i < hp.count; i++) hp.setXYZ(i, ...sculpt(hp.getX(i), hp.getY(i), hp.getZ(i)));
   headGeo.computeVertexNormals();
   const [ex, ey] = sculpt(.38, .12, Math.sqrt(1 - .38 * .38 - .12 * .12));
-  eye.value.set(ex, ey, .062, .044);
+  eye.value.set(ex, ey, .07, .034); // almond, wider than tall
   const head = new THREE.Mesh(headGeo, mat);
   head.position.y = .157; // chin near SVG y 500, crown near 90
+
+  // a small studio for the chrome to reflect: dark room, white softboxes, a red panel
+  const pm = new THREE.PMREMGenerator(renderer), studio = new THREE.Scene();
+  studio.add(new THREE.Mesh(new THREE.BoxGeometry(20, 20, 20), new THREE.MeshBasicMaterial({ color: 0x3a3d42, side: THREE.BackSide })));
+  [[8, 4, 0xffffff, -4, 5, 5], [2, 9, 0xffffff, 6, 0, 3], [2, 9, 0xffffff, -7, 0, 1], [8, 5, 0xe8291c, 2, -3, -6], [6, 3, 0xd5d8dc, 0, -6, 3]].forEach(([w, h, c, x, y, z]) => {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+    p.position.set(x, y, z); p.lookAt(0, 0, 0); studio.add(p);
+  });
+  const env = pm.fromScene(studio, .03).texture;
+  pm.dispose();
+  const chrome = patch(new THREE.MeshStandardMaterial({ color: 0xe9e9ec, metalness: 1, roughness: .14, envMap: env, envMapIntensity: 1.4, side: THREE.DoubleSide }));
+
+  // the chrome mask, after the reference: a V over the forehead rising to the temples, cat-eye cut-outs,
+  // and a beak that runs down past the chin to a point. Built on a (u, v) grid laid over the face.
+  const inMask = (u, v) => {
+    const a = Math.abs(u);
+    if (a > .78 || v > .12 + 1.05 * a || v < -1.12 + 1.55 * a) return false;
+    const ex = (a - .37) / .21, ey = (v - .1 - .3 * (a - .37)) / .085;
+    return ex * ex + ey * ey > 1;
+  };
+  const maskPos = (u, v) => {
+    const vv = Math.max(v, -.9), [X, , Z] = sculpt(u, vv, Math.sqrt(Math.max(.02, 1 - u * u - vv * vv)), 0);
+    // off the skin a little; below the chin the beak keeps going down instead of curling under; a ridge down the middle
+    return [X * 1.07, v * .58, Z + .04 + .2 * Math.max(0, 1 - Math.abs(u) / .55) ** 1.4 * smooth01(.15, -.5, v)];
+  };
+  const maskGeo = new THREE.PlaneGeometry(1.6, 2.12, 160, 212), mp = maskGeo.attributes.position, mi = maskGeo.index.array, mk = [];
+  maskGeo.translate(0, -.09, 0);
+  for (let i = 0; i < mi.length; i += 3) if ([0, 1, 2].every((k) => inMask(mp.getX(mi[i + k]), mp.getY(mi[i + k])))) mk.push(mi[i], mi[i + 1], mi[i + 2]);
+  maskGeo.setIndex(mk);
+  for (let i = 0; i < mp.count; i++) mp.setXYZ(i, ...maskPos(mp.getX(i), mp.getY(i)));
+  maskGeo.computeVertexNormals();
+  head.add(new THREE.Mesh(maskGeo, chrome));
+  // two blades per side at the temples: a tall one and a shorter one behind it, leaning out
+  const blade = (h, w, bend) => {
+    const s = new THREE.Shape();
+    s.moveTo(-w / 2, 0); s.quadraticCurveTo(-w * .2 + bend * .5, h * .55, bend, h); s.quadraticCurveTo(w * .35 + bend * .5, h * .5, w / 2, 0);
+    const g = new THREE.ExtrudeGeometry(s, { depth: .022, bevelEnabled: true, bevelThickness: .01, bevelSize: .008, bevelSegments: 2, curveSegments: 12 });
+    g.translate(0, -.02, -.011);
+    return g;
+  };
+  [-1, 1].forEach((sd) => {
+    [[.6, .72, .42, .12, .5, .12], [.76, .5, .27, .1, .95, .35]].forEach(([u, v, h, w, ry, rz]) => {
+      const b = new THREE.Mesh(blade(h, w, .05 * sd), chrome);
+      b.position.set(...maskPos(u * sd, v));
+      b.rotation.set(-.1, ry * sd, -rz * sd);
+      head.add(b);
+    });
+  });
+  // slicked-back dark hair: a cap over the skull with a high hairline, and a low bun at the back
+  const hairMat = patch(new THREE.MeshStandardMaterial({ color: 0x151515, roughness: .3, metalness: .15, envMap: env, envMapIntensity: .7, side: THREE.DoubleSide }));
+  const hairGeo = new THREE.SphereGeometry(1, 56, 44), hq = hairGeo.attributes.position, hi = hairGeo.index.array, hk = [];
+  const inHair = (i) => hq.getY(i) > .62 - .38 * (1 - hq.getZ(i));
+  for (let i = 0; i < hi.length; i += 3) if (inHair(hi[i]) && inHair(hi[i + 1]) && inHair(hi[i + 2])) hk.push(hi[i], hi[i + 1], hi[i + 2]);
+  hairGeo.setIndex(hk);
+  for (let i = 0; i < hq.count; i++) { const [X, Y, Z] = sculpt(hq.getX(i), hq.getY(i), hq.getZ(i)); hq.setXYZ(i, X * 1.03, Y * 1.02, Z * 1.03); }
+  hairGeo.computeVertexNormals();
+  const bun = new THREE.Mesh(new THREE.SphereGeometry(.11, 24, 16), hairMat);
+  bun.position.set(0, -.08, -.42);
+  head.add(new THREE.Mesh(hairGeo, hairMat), bun);
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(.1, .12, .34, 24, 1, true), mat);
   neck.position.set(0, -.36, -.06);
   // softer, rounder bevel than the head so the body reads as flesh rather than a cut-out
