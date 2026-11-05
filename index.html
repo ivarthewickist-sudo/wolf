@@ -235,14 +235,16 @@ main { position: relative; z-index: 2; }
 
 /* work */
 #work { position: relative; isolation: isolate; padding-block: 16vh 22vh; }
-/* the party footage behind the case index: full-bleed, dim, slightly soft, fading out at the top and bottom
-   so it sits in the dark page instead of reading as a box. The burned-in caption was painted out of the file. */
+/* the party footage behind the case index: an upright panel in its own 9:16 shape, centred in the section,
+   clearly visible but feathered at the edges so it melts into the dark page instead of reading as a box.
+   The burned-in caption was painted out of the file. */
 .work-bg {
-  position: absolute; z-index: -1; top: 0; bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%);
+  position: absolute; z-index: -1; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  height: min(100%, 118vh); aspect-ratio: 9 / 16; max-width: 100vw;
   object-fit: cover; pointer-events: none;
-  opacity: .26; filter: blur(2px) saturate(.75);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  opacity: .85; filter: brightness(1.35) saturate(1.1) contrast(1.05); /* the footage is dark; lift it so it reads */
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at center, #000 72%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at center, #000 72%, transparent 100%);
 }
 .sec-head { position: relative; display: flex; justify-content: space-between; gap: 16px; padding-bottom: 12px; font-size: 9.5px; }
 .sec-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); transform: scaleX(var(--draw, 1)); transform-origin: left; }
