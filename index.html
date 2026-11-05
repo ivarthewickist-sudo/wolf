@@ -310,6 +310,10 @@ main { position: relative; z-index: 2; }
   height: 94%; aspect-ratio: 600 / 700; max-width: 100%; display: block;
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, .35));
 }
+/* the flat SVG head is the fallback; once three.js loads, a 3D head (canvas) takes its place in the same box */
+.sil > svg, .sil > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.sil.is-3d > svg { display: none; }
+.sil.is-3d { filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .16)); }
 .sil .body { fill: var(--paper); }
 .sil .x { stroke: var(--soot); stroke-width: 2; fill: none; }
 .sil .dot { fill: var(--blood); }
@@ -613,11 +617,13 @@ body.is-red .crt { opacity: .6; animation: none; }
   <div class="pin">
     <canvas id="terrain" aria-hidden="true"></canvas>
     <div class="claws-pos" aria-hidden="true"><div class="claws"><i class="claw"></i><i class="claw"></i><i class="claw"></i></div></div>
-    <svg class="sil" viewBox="0 0 600 700" aria-hidden="true">
-      <path class="body" d="M300 520 L250 470 L215 400 L170 370 L185 330 L150 300 L165 250 L140 200 L150 40 L235 150 L300 135 L365 150 L450 40 L460 200 L435 250 L450 300 L415 330 L430 370 L385 400 L350 470 Z M300 495 L240 520 L170 560 L60 620 L0 660 L0 700 L600 700 L600 660 L540 620 L430 560 L360 520 Z"/>
-      <path class="x" d="M222 268h26M235 255v26M352 268h26M365 255v26"/>
-      <rect class="dot" x="436" y="72" width="7" height="18"/>
-    </svg>
+    <div class="sil" aria-hidden="true">
+      <svg viewBox="0 0 600 700">
+        <path class="body" d="M300 520 L250 470 L215 400 L170 370 L185 330 L150 300 L165 250 L140 200 L150 40 L235 150 L300 135 L365 150 L450 40 L460 200 L435 250 L450 300 L415 330 L430 370 L385 400 L350 470 Z M300 495 L240 520 L170 560 L60 620 L0 660 L0 700 L600 700 L600 660 L540 620 L430 560 L360 520 Z"/>
+        <path class="x" d="M222 268h26M235 255v26M352 268h26M365 255v26"/>
+        <rect class="dot" x="436" y="72" width="7" height="18"/>
+      </svg>
+    </div>
     <div class="pl tl">SUBJECT PROFILE<br><span class="d">CANIS LUPUS · SPECIMEN 07</span></div>
     <div class="pl tr">ART DIRECTION<br>MOTION<br>CREATIVE CODE</div>
     <div class="pl h1">HEARING<br><b>≈10 KM</b></div>
@@ -724,7 +730,8 @@ body.is-red .crt { opacity: .6; animation: none; }
   "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js",
   "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/",
   "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.4.1/dist/bundles/anime.esm.min.js",
-  "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.27/dist/lenis.mjs"
+  "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.27/dist/lenis.mjs",
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js"
 } }
 </script>
 <script type="module">
@@ -1057,6 +1064,113 @@ createTimeline({
   .add('.claws', { rotate: [-32, -14], translateX: ['0vw', '-5vw'], duration: 520, ease: easeInOut }, 300)
   .add('.flood-black', { translateY: ['105%', '-6%'], duration: 210, ease: easeOut }, 760)
   .add('.flood-red', { translateY: ['105%', '0%'], duration: 200, ease: easeOut }, 790);
+
+/* ---------- profile head in 3D (three.js, loaded as the profile comes near) ----------
+   The flat outline extruded into a faceted, chamfered head and chest. Holes with red-hot edges eat through it
+   while the section arrives and close as it pins; they open again as the red flood comes in. A click spins it
+   a full turn. If WebGL or three.js is unavailable, the flat SVG head simply stays. */
+const silBox = $('.sil');
+const OUTLINE_HEAD = [[300, 520], [250, 470], [215, 400], [170, 370], [185, 330], [150, 300], [165, 250], [140, 200], [150, 40], [235, 150], [300, 135], [365, 150], [450, 40], [460, 200], [435, 250], [450, 300], [415, 330], [430, 370], [385, 400], [350, 470]];
+const OUTLINE_CHEST = [[300, 495], [240, 520], [170, 560], [60, 620], [0, 660], [0, 700], [600, 700], [600, 660], [540, 620], [430, 560], [360, 520]];
+const smooth01 = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+const head3d = { enter: 1, exit: 0, spin: 0 };
+const setEnter = (s) => { head3d.enter = 1 - s.progress; };
+const setExit = (s) => { head3d.exit = smooth01(.72, .86, s.progress); }; // the red flood starts at ~.76 of the pin
+ScrollTrigger.create({ trigger: prof, start: 'top bottom', end: 'top top', onUpdate: setEnter, onRefresh: setEnter });
+ScrollTrigger.create({ trigger: prof, start: 'top top', end: 'bottom bottom', onUpdate: setExit, onRefresh: setExit });
+
+async function startHead3d() {
+  const THREE = await import('three');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // throws without WebGL
+  renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+  silBox.append(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(28, 600 / 700, .1, 50);
+  camera.position.set(0, 0, 4.15);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xaeb3b5, 1.7));
+  const key = new THREE.DirectionalLight(0xffffff, 2.3); key.position.set(-2, 2.5, 3); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xffe0d8, .9); rim.position.set(3, -1, -2); scene.add(rim);
+
+  // SVG units (600x700, y down) -> scene units centred on the head, y up
+  const toShape = (pts) => {
+    const s = new THREE.Shape();
+    pts.forEach(([x, y], i) => { const X = (x - 300) / 350, Y = (350 - y) / 350; if (i) s.lineTo(X, Y); else s.moveTo(X, Y); });
+    s.closePath();
+    return s;
+  };
+  const dissolve = { value: 1 };
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .85, metalness: 0, flatShading: true });
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uDissolve = dissolve;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vObj;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform float uDissolve;
+varying vec3 vObj;
+float wh(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float wn(vec3 x) {
+  vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+  return mix(mix(mix(wh(i), wh(i + vec3(1, 0, 0)), f.x), mix(wh(i + vec3(0, 1, 0)), wh(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(wh(i + vec3(0, 0, 1)), wh(i + vec3(1, 0, 1)), f.x), mix(wh(i + vec3(0, 1, 1)), wh(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}`)
+      // noise in the model's own space, so the holes stay put on the head as it turns
+      .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vObj * 4.) + .35 * wn(vObj * 11.);\n  if (dn < uDissolve) discard;')
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if (uDissolve > .001 && dn < uDissolve + .05) gl_FragColor.rgb = vec3(.91, .16, .11);');
+  };
+  const headGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_HEAD), { depth: .26, bevelEnabled: true, bevelThickness: .1, bevelSize: .045, bevelSegments: 2, curveSegments: 1 });
+  headGeo.translate(0, 0, -.13);
+  const chestGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_CHEST), { depth: .16, bevelEnabled: true, bevelThickness: .06, bevelSize: .03, bevelSegments: 1 });
+  chestGeo.translate(0, 0, -.28);
+  const wolf = new THREE.Group();
+  wolf.add(new THREE.Mesh(headGeo, mat), new THREE.Mesh(chestGeo, mat));
+
+  // the eye crosshairs and the red ear tag, on the front face
+  const P = (x, y) => new THREE.Vector3((x - 300) / 350, (350 - y) / 350, .235);
+  const crossMat = new THREE.LineBasicMaterial({ color: 0x0b0b0b, transparent: true });
+  wolf.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([P(222, 268), P(248, 268), P(235, 255), P(235, 281), P(352, 268), P(378, 268), P(365, 255), P(365, 281)]), crossMat));
+  const tagMat = new THREE.MeshBasicMaterial({ color: 0xe8291c, transparent: true });
+  const tag = new THREE.Mesh(new THREE.BoxGeometry(7 / 350, 18 / 350, .02), tagMat);
+  tag.position.copy(P(439.5, 81));
+  wolf.add(tag);
+  scene.add(wolf);
+
+  const fit = () => {
+    const w = silBox.clientWidth, h = silBox.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  };
+  fit();
+  new ResizeObserver(fit).observe(silBox);
+  silBox.classList.add('is-3d');
+
+  // a click spins it a full turn; the custom cursor grows over it like over links
+  silBox.addEventListener('click', () => gsap.to(head3d, { spin: head3d.spin + Math.PI * 2, duration: calm ? .6 : 1.6, ease: 'power3.inOut', overwrite: true }));
+  silBox.addEventListener('pointerenter', () => cur.classList.add('big'));
+  silBox.addEventListener('pointerleave', () => cur.classList.remove('big'));
+
+  let onScreen = true, ry = 0, rx = 0;
+  new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; }).observe(prof);
+  renderer.setAnimationLoop((ms) => {
+    if (!onScreen) return;
+    const t = ms / 1000;
+    dissolve.value = calm ? 0 : Math.min(1.02, Math.max(head3d.enter, head3d.exit) * 1.02);
+    const ty = (state.mx - .5) * .6 + (calm ? 0 : Math.sin(t * .4) * .12) + head3d.spin;
+    ry += (ty - ry) * .08;
+    rx += ((state.my - .5) * .25 - rx) * .08;
+    wolf.rotation.set(rx, ry, 0);
+    crossMat.opacity = tagMat.opacity = 1 - smooth01(.12, .45, dissolve.value); // face marks fade before the holes reach them
+    renderer.render(scene, camera);
+  });
+}
+let headStarted = false;
+new IntersectionObserver(([e], io) => {
+  if (!e.isIntersecting || headStarted) return;
+  headStarted = true; io.disconnect();
+  startHead3d().catch(() => { silBox.querySelector('canvas')?.remove(); silBox.classList.remove('is-3d'); });
+}, { rootMargin: '100% 0px' }).observe(prof);
 
 // the flood's top edge is a sum of sines, redrawn only while the profile is on screen
 const waves = $$('.flood path, .profile-edge path'); // the red flood and the white section's top edge
