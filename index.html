@@ -619,7 +619,7 @@ body.is-red .crt { opacity: .6; animation: none; }
     <div class="claws-pos" aria-hidden="true"><div class="claws"><i class="claw"></i><i class="claw"></i><i class="claw"></i></div></div>
     <div class="sil" aria-hidden="true">
       <svg viewBox="0 0 600 700">
-        <path class="body" d="M300 520 L250 470 L215 400 L170 370 L185 330 L150 300 L165 250 L140 200 L150 40 L235 150 L300 135 L365 150 L450 40 L460 200 L435 250 L450 300 L415 330 L430 370 L385 400 L350 470 Z M300 495 L240 520 L170 560 L60 620 L0 660 L0 700 L600 700 L600 660 L540 620 L430 560 L360 520 Z"/>
+        <path class="body" d="M300 520 L250 470 L215 400 L170 370 L185 330 L150 300 L165 250 L140 200 L150 40 L235 150 L300 135 L365 150 L450 40 L460 200 L435 250 L450 300 L415 330 L430 370 L385 400 L350 470 Z M262 470 L264 560 L232 578 L170 596 L110 612 L70 630 L42 656 L26 690 L22 700 L578 700 L574 690 L558 656 L530 630 L490 612 L430 596 L368 578 L336 560 L338 470 Z"/>
         <path class="x" d="M222 268h26M235 255v26M352 268h26M365 255v26"/>
         <rect class="dot" x="436" y="72" width="7" height="18"/>
       </svg>
@@ -1071,7 +1071,8 @@ createTimeline({
    a full turn. If WebGL or three.js is unavailable, the flat SVG head simply stays. */
 const silBox = $('.sil');
 const OUTLINE_HEAD = [[300, 520], [250, 470], [215, 400], [170, 370], [185, 330], [150, 300], [165, 250], [140, 200], [150, 40], [235, 150], [300, 135], [365, 150], [450, 40], [460, 200], [435, 250], [450, 300], [415, 330], [430, 370], [385, 400], [350, 470]];
-const OUTLINE_CHEST = [[300, 495], [240, 520], [170, 560], [60, 620], [0, 660], [0, 700], [600, 700], [600, 660], [540, 620], [430, 560], [360, 520]];
+// a human bust under the wolf's jaw: neck, sloping trapezius, rounded shoulders, upper chest (the neck top hides behind the head)
+const OUTLINE_BUST = [[262, 470], [264, 560], [232, 578], [170, 596], [110, 612], [70, 630], [42, 656], [26, 690], [22, 700], [578, 700], [574, 690], [558, 656], [530, 630], [490, 612], [430, 596], [368, 578], [336, 560], [338, 470]];
 const smooth01 = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
 const head3d = { enter: 1, exit: 0, spin: 0 };
 const setEnter = (s) => { head3d.enter = 1 - s.progress; };
@@ -1098,16 +1099,18 @@ async function startHead3d() {
     s.closePath();
     return s;
   };
-  const dissolve = { value: 1 };
+  const dissolve = { value: 1 }, live = { value: 0 }, clock = { value: 0 };
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .85, metalness: 0, flatShading: true });
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uDissolve = dissolve;
+    sh.uniforms.uLive = live;
+    sh.uniforms.uTime = clock;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vObj;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-uniform float uDissolve;
+uniform float uDissolve, uLive, uTime;
 varying vec3 vObj;
 float wh(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float wn(vec3 x) {
@@ -1115,16 +1118,18 @@ float wn(vec3 x) {
   return mix(mix(mix(wh(i), wh(i + vec3(1, 0, 0)), f.x), mix(wh(i + vec3(0, 1, 0)), wh(i + vec3(1, 1, 0)), f.x), f.y),
              mix(mix(wh(i + vec3(0, 0, 1)), wh(i + vec3(1, 0, 1)), f.x), mix(wh(i + vec3(0, 1, 1)), wh(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }`)
-      // noise in the model's own space, so the holes stay put on the head as it turns
-      .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vObj * 4.) + .35 * wn(vObj * 11.);\n  if (dn < uDissolve) discard;')
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if (uDissolve > .001 && dn < uDissolve + .05) gl_FragColor.rgb = vec3(.91, .16, .11);');
+      // noise in the model's own space, so the holes stay put on the head as it turns.
+      // dn: the arrival/exit holes. lv: a second, drifting noise whose few low points open and close over time.
+      .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vObj * 4.) + .35 * wn(vObj * 11.);\n  float lv = wn(vObj * 6. + vec3(0., uTime * .45, uTime * .25));\n  if (dn < uDissolve || lv < uLive) discard;')
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if ((uDissolve > .001 && dn < uDissolve + .05) || (uLive > .001 && lv < uLive + .035)) gl_FragColor.rgb = vec3(.91, .16, .11);');
   };
   const headGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_HEAD), { depth: .26, bevelEnabled: true, bevelThickness: .1, bevelSize: .045, bevelSegments: 2, curveSegments: 1 });
   headGeo.translate(0, 0, -.13);
-  const chestGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_CHEST), { depth: .16, bevelEnabled: true, bevelThickness: .06, bevelSize: .03, bevelSegments: 1 });
-  chestGeo.translate(0, 0, -.28);
+  // softer, rounder bevel than the head so the body reads as flesh rather than a cut-out
+  const bustGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_BUST), { depth: .3, bevelEnabled: true, bevelThickness: .1, bevelSize: .05, bevelSegments: 3 });
+  bustGeo.translate(0, 0, -.32);
   const wolf = new THREE.Group();
-  wolf.add(new THREE.Mesh(headGeo, mat), new THREE.Mesh(chestGeo, mat));
+  wolf.add(new THREE.Mesh(headGeo, mat), new THREE.Mesh(bustGeo, mat));
 
   // the eye crosshairs and the red ear tag, on the front face
   const P = (x, y) => new THREE.Vector3((x - 300) / 350, (350 - y) / 350, .235);
@@ -1157,6 +1162,8 @@ float wn(vec3 x) {
     if (!onScreen) return;
     const t = ms / 1000;
     dissolve.value = calm ? 0 : Math.min(1.02, Math.max(head3d.enter, head3d.exit) * 1.02);
+    clock.value = t;
+    live.value = calm ? 0 : .15 + .07 * Math.sin(t * .9); // the threshold breathes, so holes keep opening and closing
     const ty = (state.mx - .5) * .6 + (calm ? 0 : Math.sin(t * .4) * .12) + head3d.spin;
     ry += (ty - ry) * .08;
     rx += ((state.my - .5) * .25 - rx) * .08;
