@@ -619,9 +619,7 @@ body.is-red .crt { opacity: .6; animation: none; }
     <div class="claws-pos" aria-hidden="true"><div class="claws"><i class="claw"></i><i class="claw"></i><i class="claw"></i></div></div>
     <div class="sil" aria-hidden="true">
       <svg viewBox="0 0 600 700">
-        <path class="body" d="M300 520 L250 470 L215 400 L170 370 L185 330 L150 300 L165 250 L140 200 L150 40 L235 150 L300 135 L365 150 L450 40 L460 200 L435 250 L450 300 L415 330 L430 370 L385 400 L350 470 Z M262 470 L264 560 L232 578 L170 596 L110 612 L70 630 L42 656 L26 690 L22 700 L578 700 L574 690 L558 656 L530 630 L490 612 L430 596 L368 578 L336 560 L338 470 Z"/>
-        <path class="x" d="M222 268h26M235 255v26M352 268h26M365 255v26"/>
-        <rect class="dot" x="436" y="72" width="7" height="18"/>
+        <path class="body" fill-rule="evenodd" d="M300 90 C388 90 430 165 428 262 L446 290 L436 330 L420 340 C412 420 360 500 300 500 C240 500 188 420 180 340 L164 330 L154 290 L172 262 C170 165 212 90 300 90 Z M229 270 a23 16 0 1 0 46 0 a23 16 0 1 0 -46 0 Z M325 270 a23 16 0 1 0 46 0 a23 16 0 1 0 -46 0 Z M262 470 L264 560 L232 578 L170 596 L110 612 L70 630 L42 656 L26 690 L22 700 L578 700 L574 690 L558 656 L530 630 L490 612 L430 596 L368 578 L336 560 L338 470 Z"/>
       </svg>
     </div>
     <div class="pl tl">SUBJECT PROFILE<br><span class="d">CANIS LUPUS · SPECIMEN 07</span></div>
@@ -1070,8 +1068,7 @@ createTimeline({
    while the section arrives and close as it pins; they open again as the red flood comes in. A click spins it
    a full turn. If WebGL or three.js is unavailable, the flat SVG head simply stays. */
 const silBox = $('.sil');
-const OUTLINE_HEAD = [[300, 520], [250, 470], [215, 400], [170, 370], [185, 330], [150, 300], [165, 250], [140, 200], [150, 40], [235, 150], [300, 135], [365, 150], [450, 40], [460, 200], [435, 250], [450, 300], [415, 330], [430, 370], [385, 400], [350, 470]];
-// a human bust under the wolf's jaw: neck, sloping trapezius, rounded shoulders, upper chest (the neck top hides behind the head)
+// a human bust under the head: neck, sloping trapezius, rounded shoulders, upper chest (the neck top hides behind the head)
 const OUTLINE_BUST = [[262, 470], [264, 560], [232, 578], [170, 596], [110, 612], [70, 630], [42, 656], [26, 690], [22, 700], [578, 700], [574, 690], [558, 656], [530, 630], [490, 612], [430, 596], [368, 578], [336, 560], [338, 470]];
 const smooth01 = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
 const head3d = { enter: 1, exit: 0, spin: 0 };
@@ -1099,18 +1096,21 @@ async function startHead3d() {
     s.closePath();
     return s;
   };
-  const dissolve = { value: 1 }, live = { value: 0 }, clock = { value: 0 };
-  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .85, metalness: 0, flatShading: true });
+  const dissolve = { value: 1 }, live = { value: 0 }, clock = { value: 0 }, eye = { value: new THREE.Vector4() };
+  // double-sided so the inside of the skull shows, dark, through the eye holes and the other holes
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .85, metalness: 0, flatShading: true, side: THREE.DoubleSide });
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uDissolve = dissolve;
     sh.uniforms.uLive = live;
     sh.uniforms.uTime = clock;
+    sh.uniforms.uEye = eye;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vObj;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform float uDissolve, uLive, uTime;
+uniform vec4 uEye; // xy: eye centre (x mirrored), zw: radii
 varying vec3 vObj;
 float wh(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float wn(vec3 x) {
@@ -1120,25 +1120,36 @@ float wn(vec3 x) {
 }`)
       // noise in the model's own space, so the holes stay put on the head as it turns.
       // dn: the arrival/exit holes. lv: a second, drifting noise whose few low points open and close over time.
-      .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vObj * 4.) + .35 * wn(vObj * 11.);\n  float lv = wn(vObj * 6. + vec3(0., uTime * .45, uTime * .25));\n  if (dn < uDissolve || lv < uLive) discard;')
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if ((uDissolve > .001 && dn < uDissolve + .05) || (uLive > .001 && lv < uLive + .035)) gl_FragColor.rgb = vec3(.91, .16, .11);');
+      .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vObj * 4.) + .35 * wn(vObj * 11.);\n  float lv = wn(vObj * 5. + vec3(0., uTime * .12, uTime * .07));\n  vec2 ed = (vec2(abs(vObj.x), vObj.y) - uEye.xy) / uEye.zw;\n  if (dn < uDissolve || lv < uLive || (vObj.z > .1 && dot(ed, ed) < 1.)) discard;')
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if ((uDissolve > .001 && dn < uDissolve + .05) || (uLive > .001 && lv < uLive + .03)) gl_FragColor.rgb = vec3(.91, .16, .11);\n  if (!gl_FrontFacing) gl_FragColor.rgb *= .12;');
   };
-  const headGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_HEAD), { depth: .26, bevelEnabled: true, bevelThickness: .1, bevelSize: .045, bevelSegments: 2, curveSegments: 1 });
-  headGeo.translate(0, 0, -.13);
+  // a human head sculpted from a sphere: egg-shaped skull, tapering jaw, brow, nose, chin, ears and sunken eye sockets
+  const sculpt = (x, y, z) => {
+    const g = (a, b, c, d) => Math.exp(-(a * a) / (b * b) - (c * c) / (d * d)), front = Math.max(0, z) ** 2;
+    let X = x * .36, Y = y * .58, Z = z * .43 * (z > 0 ? .9 : 1);
+    if (y < 0) { X *= 1 - .3 * (-y) ** 1.6; Z *= 1 - .15 * y * y; } // jaw narrows to the chin
+    Z += front * (.03 * g(x, .7, y - .3, .08) // brow ridge
+      + .11 * g(x, .1, y + .12, .16) * z * z // nose
+      + .04 * g(x, .22, y + .78, .12) // chin
+      - .015 * g(x, .22, y + .5, .03) // mouth line
+      - .07 * g(Math.abs(x) - .38, .16, y - .12, .12)); // eye sockets
+    if (Math.abs(x) > .8) X += Math.sign(x) * .05 * g(y - .05, .15, z + .05, .2); // ears
+    return [X, Y, Z];
+  };
+  const headGeo = new THREE.SphereGeometry(1, 56, 44), hp = headGeo.attributes.position;
+  for (let i = 0; i < hp.count; i++) hp.setXYZ(i, ...sculpt(hp.getX(i), hp.getY(i), hp.getZ(i)));
+  headGeo.computeVertexNormals();
+  const [ex, ey] = sculpt(.38, .12, Math.sqrt(1 - .38 * .38 - .12 * .12));
+  eye.value.set(ex, ey, .062, .044);
+  const head = new THREE.Mesh(headGeo, mat);
+  head.position.y = .157; // chin near SVG y 500, crown near 90
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(.1, .12, .34, 24, 1, true), mat);
+  neck.position.set(0, -.36, -.06);
   // softer, rounder bevel than the head so the body reads as flesh rather than a cut-out
   const bustGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_BUST), { depth: .3, bevelEnabled: true, bevelThickness: .1, bevelSize: .05, bevelSegments: 3 });
   bustGeo.translate(0, 0, -.32);
   const wolf = new THREE.Group();
-  wolf.add(new THREE.Mesh(headGeo, mat), new THREE.Mesh(bustGeo, mat));
-
-  // the eye crosshairs and the red ear tag, on the front face
-  const P = (x, y) => new THREE.Vector3((x - 300) / 350, (350 - y) / 350, .235);
-  const crossMat = new THREE.LineBasicMaterial({ color: 0x0b0b0b, transparent: true });
-  wolf.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([P(222, 268), P(248, 268), P(235, 255), P(235, 281), P(352, 268), P(378, 268), P(365, 255), P(365, 281)]), crossMat));
-  const tagMat = new THREE.MeshBasicMaterial({ color: 0xe8291c, transparent: true });
-  const tag = new THREE.Mesh(new THREE.BoxGeometry(7 / 350, 18 / 350, .02), tagMat);
-  tag.position.copy(P(439.5, 81));
-  wolf.add(tag);
+  wolf.add(head, neck, new THREE.Mesh(bustGeo, mat));
   scene.add(wolf);
 
   const fit = () => {
@@ -1163,12 +1174,11 @@ float wn(vec3 x) {
     const t = ms / 1000;
     dissolve.value = calm ? 0 : Math.min(1.02, Math.max(head3d.enter, head3d.exit) * 1.02);
     clock.value = t;
-    live.value = calm ? 0 : .15 + .07 * Math.sin(t * .9); // the threshold breathes, so holes keep opening and closing
+    live.value = calm ? 0 : .07 + .03 * Math.sin(t * .35); // a slow breath: a few small holes open and close
     const ty = (state.mx - .5) * .6 + (calm ? 0 : Math.sin(t * .4) * .12) + head3d.spin;
     ry += (ty - ry) * .08;
     rx += ((state.my - .5) * .25 - rx) * .08;
     wolf.rotation.set(rx, ry, 0);
-    crossMat.opacity = tagMat.opacity = 1 - smooth01(.12, .45, dissolve.value); // face marks fade before the holes reach them
     renderer.render(scene, camera);
   });
 }
