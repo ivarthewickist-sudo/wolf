@@ -235,24 +235,26 @@ main { position: relative; z-index: 2; }
 
 /* work */
 #work { position: relative; isolation: isolate; padding-block: 16vh 22vh; }
-/* the party footage behind the case index: an upright panel in its own 9:16 shape, centred in the section,
-   clearly visible but feathered at the edges so it melts into the dark page instead of reading as a box.
-   The burned-in caption was painted out of the file. */
-.work-bg {
-  position: absolute; z-index: -1; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  height: min(100%, 118vh); aspect-ratio: 9 / 16; max-width: 100vw;
-  object-fit: cover; pointer-events: none;
-  opacity: .62; filter: brightness(1.2) saturate(1.05); /* the footage is dark; lift it a little so it reads */
-  -webkit-mask-image: radial-gradient(ellipse 50% 50% at center, #000 68%, transparent 100%);
-  mask-image: radial-gradient(ellipse 50% 50% at center, #000 68%, transparent 100%);
+/* the party footage behind the case index, made to read as one video across the full width: the sharp upright
+   clip in the middle, and behind it a zoomed, blurred copy of the same frames filling the sides (the way phones
+   show a vertical video on a wide screen). The clip only fades to the left and right, into that copy, and the
+   whole thing fades out at the top and bottom of the section. The burned-in caption was painted out of the file. */
+.work-media {
+  position: absolute; z-index: -1; top: 0; bottom: 0; left: 50%; width: 100vw; transform: translateX(-50%);
+  overflow: hidden; pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
 }
-/* ambient light across the full width: the video's colours drawn into a tiny canvas every frame, stretched and
-   blurred, so the whole section glows in time with the footage while the panel itself stays in the middle */
 .work-glow {
-  position: absolute; z-index: -2; top: 0; bottom: 0; left: 50%; width: 100vw; height: 100%; transform: translateX(-50%);
-  pointer-events: none; opacity: .3; filter: blur(48px) saturate(1.2);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 80%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 80%, transparent);
+  position: absolute; inset: -80px; width: calc(100% + 160px); height: calc(100% + 160px); /* oversized so the blur has no dark rim */
+  opacity: .62; filter: blur(34px) brightness(1.15) saturate(1.2);
+}
+.work-bg {
+  position: absolute; left: 50%; top: 0; height: 100%; transform: translateX(-50%);
+  aspect-ratio: 9 / 16; max-width: none; object-fit: cover;
+  opacity: .82; filter: brightness(1.25) saturate(1.05); /* the footage is dark; lift it so it reads */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
 }
 .sec-head { position: relative; display: flex; justify-content: space-between; gap: 16px; padding-bottom: 12px; font-size: 9.5px; }
 .sec-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); transform: scaleX(var(--draw, 1)); transform-origin: left; }
@@ -577,8 +579,10 @@ body.is-red .crt { opacity: .6; animation: none; }
   </section>
 
   <section id="work">
-    <canvas class="work-glow" width="32" height="18" aria-hidden="true"></canvas>
-    <video class="work-bg" src="assets/den-loop.webm" poster="assets/den-poster.jpg" muted loop playsinline preload="metadata" aria-hidden="true"></video>
+    <div class="work-media" aria-hidden="true">
+      <canvas class="work-glow" width="64" height="36"></canvas>
+      <video class="work-bg" src="assets/den-loop.webm" poster="assets/den-poster.jpg" muted loop playsinline preload="metadata"></video>
+    </div>
     <div class="sec-head"><span>CASE INDEX</span><span class="d">05 FILES · SORTED BY LAST SIGHTING</span></div>
     <ol class="cases">
       <li><span class="no">01</span><span class="name">NIGHT SHIFT</span><span class="what">BRAND SYSTEM</span><span class="yr">2026</span></li>
@@ -924,9 +928,18 @@ if (!calm) setInterval(() => {
 /* ---------- scroll wiring ---------- */
 /* ---------- WORK background footage: plays only while on screen; reduced motion keeps the still poster ---------- */
 const workBg = $('.work-bg');
-// ambient glow: repaint the 32x18 canvas from the playing video each frame (cheap at this size)
-const glow = $('.work-glow').getContext('2d');
-const paintGlow = () => glow.drawImage(workBg, 0, 0, 32, 18);
+// the full-width blurred copy: a 64px-wide canvas shaped like the section, repainted from the playing video
+// each frame, with the frame scaled to cover it and centred like the sharp clip, so the two read as one video
+const glowCv = $('.work-glow'), glow = glowCv.getContext('2d');
+const sizeGlow = () => { glowCv.width = 64; glowCv.height = Math.max(8, Math.round(64 * glowCv.clientHeight / Math.max(1, glowCv.clientWidth))); };
+const paintGlow = () => {
+  const vw = workBg.videoWidth, vh = workBg.videoHeight, cw = glowCv.width, ch = glowCv.height;
+  if (!vw) return;
+  const s = Math.max(cw / vw, ch / vh);
+  glow.drawImage(workBg, (cw - vw * s) / 2, (ch - vh * s) / 2, vw * s, vh * s);
+};
+sizeGlow();
+addEventListener('resize', () => { sizeGlow(); paintGlow(); });
 workBg.addEventListener('loadeddata', paintGlow); // also gives reduced-motion visitors a still glow
 if ('requestVideoFrameCallback' in workBg) {
   const onFrame = () => { paintGlow(); workBg.requestVideoFrameCallback(onFrame); };
