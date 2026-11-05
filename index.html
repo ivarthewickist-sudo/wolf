@@ -252,7 +252,7 @@ main { position: relative; z-index: 2; }
 .work-bg {
   position: absolute; left: 50%; top: 0; height: 100%; transform: translateX(-50%);
   aspect-ratio: 9 / 16; max-width: none; object-fit: cover;
-  opacity: .82; filter: brightness(1.25) saturate(1.05); /* the footage is dark; lift it so it reads */
+  opacity: .92; filter: brightness(1.5) saturate(1.1); /* ASCII frames are mostly black between characters; lift them so they read */
   -webkit-mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
   mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
 }
@@ -581,7 +581,7 @@ body.is-red .crt { opacity: .6; animation: none; }
   <section id="work">
     <div class="work-media" aria-hidden="true">
       <canvas class="work-glow" width="64" height="36"></canvas>
-      <video class="work-bg" src="assets/den-loop.webm" poster="assets/den-poster.jpg" muted loop playsinline preload="metadata"></video>
+      <video class="work-bg" src="assets/den-ascii.webm" poster="assets/den-ascii-poster.jpg" muted loop playsinline preload="metadata"></video>
     </div>
     <div class="sec-head"><span>CASE INDEX</span><span class="d">05 FILES · SORTED BY LAST SIGHTING</span></div>
     <ol class="cases">
