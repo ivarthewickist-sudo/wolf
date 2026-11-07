@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wolf Case File</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Wolf: art direction, motion and creative code, after dark.">
+<meta name="description" content="Wolf: art direction, motion and creative code. Explore public work; members unlock unreleased files and private gathering details.">
 <meta property="og:title" content="Wolf Case File">
 <meta property="og:description" content="Art direction, motion and creative code, after dark.">
 <meta name="theme-color" content="#020303">
@@ -97,7 +97,7 @@ body.member .rail { display: flex; }
 .code { font: 700 13px/1.3 var(--text); letter-spacing: .06em; color: var(--ink); text-wrap: balance; }
 .list { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
 .list li { display: grid; grid-template-columns: 2.4em 1fr; }
-ul.list li::before { content: "—"; color: var(--dim); }
+ul.list li::before { content: "-"; color: var(--dim); }
 /* grid items don't advance the built-in list counter, so the rules keep their own */
 ol.list { counter-reset: rule; }
 ol.list li { counter-increment: rule; }
@@ -219,8 +219,8 @@ main { position: relative; z-index: 2; }
 .line { position: relative; opacity: .32; white-space: pre-wrap; }
 .line.on { opacity: 1; }
 
-/* story → work: the file redacts itself, gets stamped closed, and the case index unredacts.
-   --redact (0–1) is scrubbed by scroll; bars stay at 0 unless the transition script sets them. */
+/* story  work: the file redacts itself, gets stamped closed, and the case index unredacts.
+   --redact (0-1) is scrubbed by scroll; bars stay at 0 unless the transition script sets them. */
 .line::after, .cases .name::after {
   content: ""; position: absolute; left: -.15em; right: -.15em; top: .32em; bottom: .32em;
   background: var(--ink); transform: scaleX(var(--redact, 0)); transform-origin: left center; pointer-events: none;
@@ -235,7 +235,7 @@ main { position: relative; z-index: 2; }
 
 /* work */
 #work { position: relative; isolation: isolate; padding-block: 16vh 22vh; }
-/* the party footage behind the exit section, made to read as one video across the full width: the sharp upright
+/* the party footage behind the case index, made to read as one video across the full width: the sharp upright
    clip in the middle, and behind it a zoomed, blurred copy of the same frames filling the sides (the way phones
    show a vertical video on a wide screen). The clip only fades to the left and right, into that copy, and the
    whole thing fades out at the top and bottom of the section. The burned-in caption was painted out of the file. */
@@ -286,7 +286,7 @@ main { position: relative; z-index: 2; }
   position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
   background: var(--chalk); color: var(--soot);
 }
-/* work → profile: the white section arrives with a liquid top edge, the twin of the red flood into the exit.
+/* work  profile: the white section arrives with a liquid top edge, the twin of the red flood into the exit.
    The edge belongs to the section (absolute at its top, inside it), so no white shows before the section does;
    it scrolls in with the section and slides away as the pin takes over. Two wave layers are flipped upside down
    so they fill ABOVE the wave line: page black on top, an ash band, then the chalk sheet underneath.
@@ -474,6 +474,48 @@ body.is-red .crt { opacity: .6; animation: none; }
   html { scroll-behavior: auto; }
   .crt, .blink, .grain { animation: none; }
 }
+
+/* Readable entry points; compact labels retain the case-file aesthetic. */
+:root { --bar: 48px; }
+.hero { height: auto; min-height: 100svh; }
+.hero-access { width: min(100%, 480px); display: grid; justify-items: center; gap: 12px; text-align: center; padding: 20px; background: rgba(2,3,3,.88); border: 1px solid var(--line); }
+.hero-kicker { margin: 0; color: var(--blood); font: 700 12px/1.5 var(--mono); letter-spacing: .12em; }
+.hero-intro { margin: 0; font: 700 clamp(20px,3vw,28px)/1.25 var(--text); text-wrap: balance; text-transform: none; }
+.access-copy { margin: 0; color: var(--ink); font-size: 16px; line-height: 1.6; letter-spacing: .01em; text-transform: none; }
+.invite-note { margin: 0; color: #b3b8b9; font-size: 14px; line-height: 1.6; text-transform: none; letter-spacing: .01em; }
+.member-access { display: none; }
+body.member .public-access { display: none; }
+body.member .member-access { display: block; }
+.gate-open { min-height: 44px; justify-content: center; font-size: 13px; letter-spacing: .06em; max-width: 100%; overflow-wrap: anywhere; }
+.explore-link { display: inline-flex; align-items: center; min-height: 44px; padding: 8px; font-size: 13px; text-decoration: underline; text-underline-offset: 5px; }
+.term { width: min(500px,100%); padding: 20px; font-size: 14px; line-height: 1.6; }
+.term .row { flex-wrap: wrap; align-items: center; }
+.field { gap: 6px; }
+.field label { color: #b3b8b9; font-size: 13px; }
+.field input { font-size: 16px; min-height: 44px; padding-block: 8px; }
+.field input:focus-visible { outline: 1px dashed var(--blood); outline-offset: 3px; }
+.term .btn, .term .linkish { min-height: 44px; font-size: 13px; }
+.term .status { font-size: 13px; color: #b3b8b9; }
+.term .status.err { color: #ff8a80; }
+.term .status.ok { color: var(--ink); }
+.term .who { font-size: 14px; }
+.unlock { flex-wrap: wrap; font-size: 16px; line-height: 1.6; color: var(--ink); text-transform: none; }
+.unlock span { flex: 1 1 240px; }
+.unlock a { display: inline-flex; align-items: center; min-height: 44px; color: #ff8a80; font-size: 13px; }
+.rail { font-size: 13px; line-height: 1.65; }
+body.member .briefing > aside { font-size: 14px; }
+.col { font-size: 14px; }
+.sec-head { font-size: 12px; flex-wrap: wrap; }
+.exit-grid { font-size: 14px; }
+.exit-grid h3 { font-size: 12px; }
+.bar { font-size: 12px; }
+.bar nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); }
+.bar .btn { display: inline-flex; align-items: center; min-height: 44px; font-size: 12px; }
+@media (max-width: 520px) {
+  .join-fields, .term .actions { grid-template-columns: 1fr; }
+  .hero-access { padding: 16px; }
+  .bar nav { gap: 8px; }
+}
 </style>
 </head>
 <body>
@@ -492,10 +534,10 @@ body.is-red .crt { opacity: .6; animation: none; }
   <div class="blk">
     <div class="tick mark"><svg viewBox="0 0 100 60" aria-hidden="true"><path d="M4 56 L24 6 L44 56 M56 56 L76 6 L96 56"/></svg></div>
     <div class="row"><span class="chip">DRESS CODE</span><span class="d">PROTOCOL 01</span></div>
-    <div class="code" data-p="dress_code">—</div>
+    <div class="code" data-p="dress_code">-</div>
     <ul class="list" data-p="dress_notes"></ul>
   </div>
-  <div class="row coord"><span class="d">MOON</span><span id="moon">0.00 —</span></div>
+  <div class="row coord"><span class="d">MOON</span><span id="moon">0.00 -</span></div>
   <div class="blk">
     <div class="row"><span class="chip">HOUSE RULES</span><span class="d"><span data-p="rules_count">00</span> RULES</span></div>
     <ol class="list" data-p="rules"></ol>
@@ -505,36 +547,44 @@ body.is-red .crt { opacity: .6; animation: none; }
 
 <aside class="rail rail-r" aria-label="Next party" data-lenis-prevent>
   <div class="blk">
-    <div class="row"><span class="chip">NEXT GATHERING</span><span class="red blink" data-p="state">●</span></div>
-    <div class="code" data-p="title">—</div>
+    <div class="row"><span class="chip">NEXT GATHERING</span><span class="red blink" data-p="state">?</span></div>
+    <div class="code" data-p="title">-</div>
     <dl class="log">
-      <dt>DATE</dt><dd><span data-p="date">—</span></dd>
-      <dt>DOORS</dt><dd><span data-p="doors">—</span></dd>
-      <dt>ENDS</dt><dd><span data-p="ends">—</span></dd>
-      <dt>VENUE</dt><dd><span data-p="venue">—</span></dd>
-      <dt>ADDRESS</dt><dd><span data-p="address">—</span></dd>
-      <dt>CITY</dt><dd><span data-p="city">—</span></dd>
+      <dt>DATE</dt><dd><span data-p="date">-</span></dd>
+      <dt>DOORS</dt><dd><span data-p="doors">-</span></dd>
+      <dt>ENDS</dt><dd><span data-p="ends">-</span></dd>
+      <dt>VENUE</dt><dd><span data-p="venue">-</span></dd>
+      <dt>ADDRESS</dt><dd><span data-p="address">-</span></dd>
+      <dt>CITY</dt><dd><span data-p="city">-</span></dd>
     </dl>
     <div class="d" data-p="info"></div>
   </div>
-  <div class="row coord"><span data-p="lat">—</span><span data-p="lon">—</span></div>
+  <div class="row coord"><span data-p="lat">-</span><span data-p="lon">-</span></div>
   <div class="blk">
     <div class="countdown"><span class="d">T-MINUS</span><b data-p="countdown">--D --H --M</b></div>
-    <div class="row"><span>ENTRY</span><span data-p="entry">—</span></div>
-    <div class="row"><span>CAPACITY</span><span data-p="capacity">—</span></div>
-    <div class="row"><a data-p="maps" href="#" target="_blank" rel="noopener">OPEN IN MAPS ↗</a><span class="d">FILE 07 / OPEN</span></div>
+    <div class="row"><span>ENTRY</span><span data-p="entry">-</span></div>
+    <div class="row"><span>CAPACITY</span><span data-p="capacity">-</span></div>
+    <div class="row"><a data-p="maps" href="#" target="_blank" rel="noopener">OPEN IN MAPS ?</a><span class="d">FILE 07 / OPEN</span></div>
   </div>
 </aside>
 
 <main class="gut">
   <section class="story" id="index">
     <div class="hero">
+      <div class="hero-access">
+        <p class="hero-kicker">WOLF / AFTER DARK</p>
+        <p class="hero-intro">Art direction, motion &amp; creative code.</p>
+        <p class="access-copy public-access">Explore the public work. Members unlock unreleased files and private gathering details.</p>
+        <p class="access-copy member-access">Your clearance is active. Open member access for private files; gathering details appear in your briefing.</p>
       <button class="gate-open" id="t-open" type="button" aria-haspopup="dialog" aria-controls="gate">
-        <span class="dot blink"></span><span id="t-open-label">MEMBER ACCESS</span><span class="d">+</span>
+        <span class="dot blink"></span><span id="t-open-label">SIGN IN / MEMBER ACCESS</span><span class="d">+</span>
       </button>
+        <a class="explore-link" href="#work">EXPLORE THE WORK &darr;</a>
+        <p class="invite-note public-access">New members join by invitation.</p>
+      </div>
     </div>
     <div class="briefing" id="briefing" aria-label="Party briefing"></div>
-    <h1>CASE FILE 07 · THE ONE THAT KEPT WATCHING</h1>
+    <h1>CASE FILE 07 � THE ONE THAT KEPT WATCHING</h1>
     <div class="col col-l">
       <span class="line">NOBODY SAW IT ARRIVE.</span>
       <span class="line">THAT WAS THE FIRST CLUE.</span>
@@ -581,11 +631,15 @@ body.is-red .crt { opacity: .6; animation: none; }
       <span class="line">THE FILE STAYS OPEN.</span>
       <span class="line">IT IS PROBABLY WATCHING YOU SCROLL.</span>
     </div>
-    <div class="stamp" aria-hidden="true"><span>CASE FILE 07</span><b>CLOSED</b><span>CONTINUE TO INDEX ↓</span></div>
+    <div class="stamp" aria-hidden="true"><span>CASE FILE 07</span><b>CLOSED</b><span>CONTINUE TO INDEX </span></div>
   </section>
 
   <section id="work">
-    <div class="sec-head"><span>CASE INDEX</span><span class="d">05 FILES · SORTED BY LAST SIGHTING</span></div>
+    <div class="work-media" aria-hidden="true">
+      <canvas class="work-glow" width="64" height="36"></canvas>
+      <video class="work-bg" src="assets/den-ascii-magic-3.webm" poster="assets/den-ascii-magic-3-poster.jpg" muted loop playsinline preload="metadata"></video>
+    </div>
+    <div class="sec-head"><span>CASE INDEX</span><span class="d">05 FILES � SORTED BY LAST SIGHTING</span></div>
     <ol class="cases">
       <li><span class="no">01</span><span class="name">NIGHT SHIFT</span><span class="what">BRAND SYSTEM</span><span class="yr">2026</span></li>
       <li><span class="no">02</span><span class="name">PACK SIGNAL</span><span class="what">MOTION IDENTITY</span><span class="yr">2025</span></li>
@@ -596,14 +650,14 @@ body.is-red .crt { opacity: .6; animation: none; }
   </section>
 
   <section id="classified">
-    <div class="sec-head"><span>CLASSIFIED · PACK MEMBERS ONLY</span><span class="d" id="cl-count">LOCKED</span></div>
+    <div class="sec-head"><span>CLASSIFIED � PACK MEMBERS ONLY</span><span class="d" id="cl-count">LOCKED</span></div>
     <ol class="cases redacted" id="cl-locked" aria-label="Locked files">
-      <li><span class="no">C1</span><span class="bars"><i style="width: 38%"></i><i style="width: 22%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
-      <li><span class="no">C2</span><span class="bars"><i style="width: 54%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
-      <li><span class="no">C3</span><span class="bars"><i style="width: 26%"></i><i style="width: 31%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
+      <li><span class="no">C1</span><span class="bars"><i style="width: 38%"></i><i style="width: 22%"></i></span><span class="what">REDACTED</span><span class="yr">����</span></li>
+      <li><span class="no">C2</span><span class="bars"><i style="width: 54%"></i></span><span class="what">REDACTED</span><span class="yr">����</span></li>
+      <li><span class="no">C3</span><span class="bars"><i style="width: 26%"></i><i style="width: 31%"></i></span><span class="what">REDACTED</span><span class="yr">����</span></li>
     </ol>
     <ol class="cases cl" id="cl-list" hidden></ol>
-    <div class="unlock" id="cl-msg"><span>THESE FILES OPEN FOR SIGNED-IN MEMBERS.</span><a href="#index" data-open-term>SIGN IN TO DECLASSIFY +</a></div>
+    <div class="unlock" id="cl-msg"><span>Unreleased projects and experiments live here. Sign in to open the files. New members need an invitation.</span><a href="#index" data-open-term>SIGN IN TO UNLOCK +</a></div>
   </section>
 </main>
 
@@ -620,11 +674,11 @@ body.is-red .crt { opacity: .6; animation: none; }
         <path class="body" fill-rule="evenodd" d="M300 90 C388 90 430 165 428 262 L446 290 L436 330 L420 340 C412 420 360 500 300 500 C240 500 188 420 180 340 L164 330 L154 290 L172 262 C170 165 212 90 300 90 Z M229 270 a23 16 0 1 0 46 0 a23 16 0 1 0 -46 0 Z M325 270 a23 16 0 1 0 46 0 a23 16 0 1 0 -46 0 Z M262 470 L264 560 L232 578 L170 596 L110 612 L70 630 L42 656 L26 690 L22 700 L578 700 L574 690 L558 656 L530 630 L490 612 L430 596 L368 578 L336 560 L338 470 Z"/>
       </svg>
     </div>
-    <div class="pl tl">SUBJECT PROFILE<br><span class="d">CANIS LUPUS · SPECIMEN 07</span></div>
+    <div class="pl tl">SUBJECT PROFILE<br><span class="d">CANIS LUPUS � SPECIMEN 07</span></div>
     <div class="pl tr">ART DIRECTION<br>MOTION<br>CREATIVE CODE</div>
-    <div class="pl h1">HEARING<br><b>≈10 KM</b></div>
-    <div class="pl h2">SMELL<br><b>≈100× YOURS</b></div>
-    <div class="pl h3">TOP SPEED<br><b>≈60 KM/H</b></div>
+    <div class="pl h1">HEARING<br><b>~10 KM</b></div>
+    <div class="pl h2">SMELL<br><b>~100� YOURS</b></div>
+    <div class="pl h3">TOP SPEED<br><b>~60 KM/H</b></div>
     <div class="teeth"><span id="teeth">0000</span><small>MIN : SEC LEFT</small></div>
     <div class="traits">
       <div><span class="w">FERAL</span><span class="w">NOCTURNAL</span><span class="w">PATIENT</span><span class="w">PRECISE</span><span class="w">UNTAMED</span><span class="w">LOYAL</span><span class="w">TERRITORIAL</span><span class="w">CURIOUS</span><span class="w">RESTLESS</span><span class="w">SHARP</span><span class="w">QUIET</span><span class="w">HUNGRY</span></div>
@@ -637,10 +691,6 @@ body.is-red .crt { opacity: .6; animation: none; }
 </section>
 
 <section id="exit" aria-label="Contact">
-  <div class="work-media" aria-hidden="true">
-    <canvas class="work-glow" width="64" height="36"></canvas>
-    <video class="work-bg" src="assets/den-ascii-magic-3.webm" poster="assets/den-ascii-magic-3-poster.jpg" muted loop playsinline preload="metadata"></video>
-  </div>
   <div class="exit-in gut" style="display: grid; gap: 28px;">
     <h2>LEAVE BEFORE<br>IT SEES YOU</h2>
     <div class="eyeband" id="eyeband">
@@ -662,12 +712,12 @@ body.is-red .crt { opacity: .6; animation: none; }
       <div class="lbl br"><span>TAPETUM LUCIDUM</span><span class="chip">OBSERVING</span></div>
     </div>
     <div class="exit-grid">
-      <div><h3>01 · SUBJECT</h3>ART DIRECTION<br>MOTION IDENTITY<br>CREATIVE CODE<br>IMAGE</div>
-      <div><h3>02 · SIGNAL</h3><div class="mail"><code id="mail">howl@yourdomain.com</code><button class="btn" id="copy" type="button">COPY +</button></div></div>
-      <div><h3>03 · ROUTES</h3><ol><li><a href="#index">INDEX</a></li><li><a href="#work">WORK</a></li><li><a href="#profile">PROFILE</a></li></ol></div>
-      <div><h3>04 · STATUS</h3>AVAILABLE FOR NIGHT SHIFTS<br>REMOTE · ANY TIME ZONE</div>
+      <div><h3>01 � SUBJECT</h3>ART DIRECTION<br>MOTION IDENTITY<br>CREATIVE CODE<br>IMAGE</div>
+      <div><h3>02 � SIGNAL</h3><div class="mail"><code id="mail">howl@yourdomain.com</code><button class="btn" id="copy" type="button">COPY +</button></div></div>
+      <div><h3>03 � ROUTES</h3><ol><li><a href="#index">INDEX</a></li><li><a href="#work">WORK</a></li><li><a href="#profile">PROFILE</a></li></ol></div>
+      <div><h3>04 � STATUS</h3>AVAILABLE FOR NIGHT SHIFTS<br>REMOTE � ANY TIME ZONE</div>
     </div>
-    <div class="exit-foot"><span>© 2026 WOLF · ALL TERRITORY RESERVED</span><a href="#index">BACK TO THE DARK ↑</a></div>
+    <div class="exit-foot"><span>� 2026 WOLF � ALL TERRITORY RESERVED</span><a href="#index">BACK TO THE DARK </a></div>
   </div>
 </section>
 
@@ -680,29 +730,31 @@ body.is-red .crt { opacity: .6; animation: none; }
   </nav>
   <div class="right">
     <span class="clock"><span id="tz">GMT+0</span> &nbsp; <span class="dot blink"></span><span id="clock">00:00:00</span></span>
-    <a class="btn" href="#exit">DON'T CALL ME +</a>
+    <a class="btn" href="#exit">CONTACT WOLF +</a>
   </div>
 </footer>
 
 <!-- member access: the terminal opens over the page from the MEMBER ACCESS button -->
-<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="t-title" data-lenis-prevent hidden>
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="t-title" aria-describedby="t-benefits" data-lenis-prevent hidden>
   <div class="term" id="term" data-state="out">
-    <div class="row"><span id="t-title"><span class="dot blink"></span>ACCESS TERMINAL</span><button type="button" class="linkish" id="t-close" aria-label="Close the access terminal">CLOSE ×</button></div>
+    <div class="row"><span id="t-title"><span class="dot blink"></span>ACCESS TERMINAL</span><button type="button" class="linkish" id="t-close" aria-label="Close the access terminal">CLOSE �</button></div>
 
+    <p class="access-copy" id="t-benefits">Member access unlocks unreleased work and private gathering details: venue, time and entry information.</p>
     <div id="t-out">
+      <p class="invite-note" id="t-help">Already a member? Sign in below. To join, open the invitation link shared with you.</p>
       <!-- members sign in here; joining only opens from an invite link (?invite=CODE) -->
       <div class="row" id="t-invite" hidden><span class="chip">INVITATION ACCEPTED</span><span class="d" id="t-invite-code"></span></div>
       <form id="t-form" novalidate>
         <div class="join-fields" id="t-join" hidden>
           <div class="field"><label for="t-first">FIRST NAME</label><input id="t-first" name="given-name" type="text" autocomplete="given-name" maxlength="60" placeholder="Ana"></div>
           <div class="field"><label for="t-last">LAST NAME</label><input id="t-last" name="family-name" type="text" autocomplete="family-name" maxlength="60" placeholder="Wolf"></div>
-          <div class="field wide"><label for="t-phone">PHONE · FOR DOOR LIST</label><input id="t-phone" name="tel" type="tel" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="+49 151 2345 6789"></div>
+          <div class="field wide"><label for="t-phone">PHONE � FOR DOOR LIST</label><input id="t-phone" name="tel" type="tel" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="+49 151 2345 6789"></div>
         </div>
-        <div class="field"><label for="t-email">CALLSIGN · EMAIL</label><input id="t-email" name="email" type="email" autocomplete="email" placeholder="you@domain.com" required></div>
-        <div class="field"><label for="t-pass">PASSPHRASE</label><input id="t-pass" name="password" type="password" autocomplete="current-password" placeholder="••••••••" minlength="6" required></div>
-        <button class="btn" id="t-go" type="submit">AUTHENTICATE +</button>
+        <div class="field"><label for="t-email">EMAIL</label><input id="t-email" name="email" type="email" autocomplete="email" placeholder="you@domain.com" required></div>
+        <div class="field"><label for="t-pass">PASSWORD</label><input id="t-pass" name="password" type="password" autocomplete="current-password" placeholder="" minlength="6" required></div>
+        <button class="btn" id="t-go" type="submit">SIGN IN +</button>
       </form>
-      <div class="row"><button type="button" class="linkish" id="t-reset">FORGOT PASSPHRASE</button><button type="button" class="linkish" id="t-to-signin" hidden>ALREADY A MEMBER? SIGN IN</button><span class="d">ENCRYPTED IN TRANSIT</span></div>
+      <div class="row"><button type="button" class="linkish" id="t-reset">RESET PASSWORD</button><button type="button" class="linkish" id="t-to-signin" hidden>ALREADY A MEMBER? SIGN IN</button><span class="d">ENCRYPTED IN TRANSIT</span></div>
     </div>
 
     <div id="t-in" hidden>
@@ -712,18 +764,18 @@ body.is-red .crt { opacity: .6; animation: none; }
     </div>
 
     <form id="t-new" hidden novalidate>
-      <div class="field"><label for="t-newpass">NEW PASSPHRASE</label><input id="t-newpass" name="new-password" type="password" autocomplete="new-password" placeholder="6+ characters" minlength="6" required></div>
-      <button class="btn" type="submit">SET PASSPHRASE +</button>
+      <div class="field"><label for="t-newpass">NEW PASSWORD</label><input id="t-newpass" name="new-password" type="password" autocomplete="new-password" placeholder="6+ characters" minlength="6" required></div>
+      <button class="btn" type="submit">SAVE NEW PASSWORD +</button>
     </form>
 
-    <div class="status" id="t-status" role="status" aria-live="polite">AWAITING SIGNAL_</div>
+    <div class="status" id="t-status" role="status" aria-live="polite">ENTER YOUR EMAIL AND PASSWORD TO SIGN IN.</div>
   </div>
 </div>
 
 <div class="crt" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="cur" aria-hidden="true"></div>
-<div class="cur-l" aria-hidden="true">X 0000 · Y 0000</div>
+<div class="cur-l" aria-hidden="true">X 0000 � Y 0000</div>
 
 <script type="importmap">
 { "imports": {
@@ -783,7 +835,7 @@ function samplePoints() {
   const c = o.getContext('2d', { willReadFrequently: true });
   c.textAlign = 'center'; c.textBaseline = 'middle';
   c.font = `${S * .82}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`;
-  c.fillText('🐺', S / 2, S / 2 + S * .04);
+  c.fillText('??', S / 2, S / 2 + S * .04);
   const d = c.getImageData(0, 0, S, S).data, pts = [];
   for (let y = 0; y < S; y += 2) for (let x = 0; x < S; x += 2) {
     const i = (y * S + x) * 4;
@@ -891,7 +943,7 @@ const mvY = gsap.quickTo([cur, curL], 'y', { duration: .25, ease: 'power3' });
 addEventListener('pointermove', (e) => {
   mvX(e.clientX); mvY(e.clientY);
   state.mx = e.clientX / innerWidth; state.my = e.clientY / innerHeight;
-  curL.textContent = `X ${pad(e.clientX)} · Y ${pad(e.clientY)}`;
+  curL.textContent = `X ${pad(e.clientX)} � Y ${pad(e.clientY)}`;
 });
 $$('a, button, .cases li, .eyeband').forEach((el) => {
   el.addEventListener('pointerenter', () => cur.classList.add('big'));
@@ -933,7 +985,7 @@ if (!calm) setInterval(() => {
 }, 3200);
 
 /* ---------- scroll wiring ---------- */
-/* ---------- EXIT background footage: plays only while on screen; reduced motion keeps the still poster ---------- */
+/* ---------- WORK background footage: plays only while on screen; reduced motion keeps the still poster ---------- */
 const workBg = $('.work-bg');
 // the full-width blurred copy: a 64px-wide canvas shaped like the section, repainted from the playing video
 // each frame, with the frame scaled to cover it and centred like the sharp clip, so the two read as one video
@@ -965,7 +1017,7 @@ let themeST = null; // the profile's theme trigger, created below; theme() is a 
 ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { state.scroll = s.progress; fill.style.transform = `scaleX(${s.progress})`; theme(); } });
 gsap.fromTo('#wolf', { opacity: 1, '--ws': 1 }, { opacity: .16, '--ws': calm ? 1 : .72, ease: 'none', scrollTrigger: { trigger: '#work', start: 'top 75%', end: 'top 20%', scrub: true } });
 
-/* ---------- story → work: the file redacts itself, is stamped CLOSED, and the case index unredacts ---------- */
+/* ---------- story  work: the file redacts itself, is stamped CLOSED, and the case index unredacts ---------- */
 if (!calm) {
   // the closing lines of both columns, interleaved so the bars sweep down the page in reading order
   const L = $$('.col-l .line').slice(-16), R = $$('.col-r .line').slice(-16);
@@ -1100,7 +1152,7 @@ async function startHead3d() {
   };
   const dissolve = { value: 1 }, live = { value: 0 }, clock = { value: 0 }, eye = { value: new THREE.Vector4() };
   // double-sided so the inside of the skull shows, dark, through the eye holes and the other holes
-  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .85, metalness: 0, flatShading: true, side: THREE.DoubleSide });
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   // every part (skin, hair, mask, crystals) gets the same holes
   const noEye = { value: new THREE.Vector4(9, 9, .001, .001) }; // only the head itself has eye holes
   const patch = (m, eyeU = noEye) => { m.onBeforeCompile = (sh) => {
@@ -1124,8 +1176,8 @@ float wn(vec3 x) {
 }`)
       // noise in the model's own space, so the holes stay put on the head as it turns.
       // dn: the arrival/exit holes. lv: a second, drifting noise whose few low points open and close over time.
-      .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vObj * 4.) + .35 * wn(vObj * 11.);\n  float lv = wn(vObj * 5. + vec3(0., uTime * .12, uTime * .07));\n  vec2 ed = (vec2(abs(vObj.x), vObj.y) - uEye.xy) / uEye.zw;\n  if (dn < uDissolve || lv < uLive || (vObj.z > .1 && dot(ed, ed) < 1.)) discard;')
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if ((uDissolve > .001 && dn < uDissolve + .05) || (uLive > .001 && lv < uLive + .03)) gl_FragColor.rgb = vec3(.91, .16, .11);\n  if (!gl_FrontFacing) gl_FragColor.rgb *= .12;');
+      .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vec3(vObj.xy * 4., 0.)) + .35 * wn(vec3(vObj.xy * 11., 0.));\n  float lv = wn(vec3(vObj.xy * 5. + vec2(0., uTime * .12), 0.));\n  vec2 ed = (vec2(abs(vObj.x), vObj.y) - uEye.xy) / uEye.zw;\n  if (dn < uDissolve || lv < uLive || (dot(ed, ed) < 1.)) discard;')
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if ((uDissolve > .001 && dn < uDissolve + .05) || (uLive > .001 && lv < uLive + .03)) gl_FragColor.rgb = vec3(1.);\n  if (!gl_FrontFacing) gl_FragColor.rgb = vec3(1.);');
   }; return m; };
   patch(mat, eye);
   // a human head sculpted from a sphere: egg-shaped skull, tapering jaw, brow, nose, chin, ears and sunken eye sockets
@@ -1145,86 +1197,22 @@ float wn(vec3 x) {
   for (let i = 0; i < hp.count; i++) hp.setXYZ(i, ...sculpt(hp.getX(i), hp.getY(i), hp.getZ(i)));
   headGeo.computeVertexNormals();
   const [ex, ey] = sculpt(.38, .12, Math.sqrt(1 - .38 * .38 - .12 * .12));
-  eye.value.set(ex, ey, .07, .034); // almond, wider than tall
+  eye.value.set(ex, ey, .075, .048); // almond, wider than tall
   const head = new THREE.Mesh(headGeo, mat);
   head.position.y = .157; // chin near SVG y 500, crown near 90
 
-  // a small studio for the glass and crystals to reflect: grey room, white softboxes
-  const pm = new THREE.PMREMGenerator(renderer), studio = new THREE.Scene();
-  studio.add(new THREE.Mesh(new THREE.BoxGeometry(20, 20, 20), new THREE.MeshBasicMaterial({ color: 0x3a3d42, side: THREE.BackSide })));
-  [[8, 4, 0xffffff, -4, 5, 5], [2, 9, 0xffffff, 6, 0, 3], [2, 9, 0xffffff, -7, 0, 1], [8, 5, 0xffffff, 2, -3, -6], [6, 3, 0xd5d8dc, 0, -6, 3], [3, 6, 0xffffff, 1.5, 2, 7]].forEach(([w, h, c, x, y, z]) => {
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
-    p.position.set(x, y, z); p.lookAt(0, 0, 0); studio.add(p);
-  });
-  const env = pm.fromScene(studio, .03).texture;
-  pm.dispose();
-  // everything but the jewellery is black: satin for skin and clothes, glass for the mask, gloss for the hair
-  mat.color.set(0x161616); mat.roughness = .45; mat.metalness = .1; mat.envMap = env; mat.envMapIntensity = .5;
-  const glass = patch(new THREE.MeshStandardMaterial({ color: 0x0b0b0c, metalness: .5, roughness: .07, envMap: env, envMapIntensity: 1.8, flatShading: true, side: THREE.DoubleSide }));
-  const crystal = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: .04, envMap: env, envMapIntensity: 2.2, flatShading: true });
-  patch(crystal);
-
-  // flat-faced geometry from points and triangles; each face is turned to point away from `c`
-  const faceted = (pts, tris, c = pts.reduce((m, q) => m.clone().add(q), new THREE.Vector3()).divideScalar(pts.length)) => {
-    const out = [];
-    tris.forEach(([i, j, k]) => {
-      const n = new THREE.Vector3().subVectors(pts[j], pts[i]).cross(new THREE.Vector3().subVectors(pts[k], pts[i]));
-      const tri = n.dot(new THREE.Vector3().subVectors(pts[i], c)) < 0 ? [pts[i], pts[k], pts[j]] : [pts[i], pts[j], pts[k]];
-      tri.forEach((q) => out.push(q.x, q.y, q.z));
-    });
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3));
-    g.computeVertexNormals();
-    return g;
-  };
-  // the mask, after the reference: a black-glass shell cut into big flat facets. The top edge dips in a V
-  // over the forehead (the hair parting shows above it) and flares out to the temples where the ears rise;
-  // a ridge runs down the nose; cheekbone planes turn back to the sides; the jaw narrows to a point below the chin.
-  {
-    const P = [
-      [0, .3, .44], [0, .12, .5], [0, -.15, .58], [0, -.45, .46], [0, -.72, .26], // 0-4 centre line: V point, brow, nose, snout, chin point
-    ], R = [
-      [.14, .45, .38], [.3, .52, .2], [.25, .18, .4], [.38, -.02, .18], [.2, -.2, .45], // 5-9: top edge, temple, brow, cheekbone, cheek
-      [.28, -.42, .16], [.13, -.58, .3], [.38, .3, -.02], [.34, -.25, -.02], // 10-13: jaw, low jaw, side behind the temple, side low
-    ];
-    const pts = [...P, ...R, ...R.map(([x, y, z]) => [-x, y, z])].map(([x, y, z]) => new THREE.Vector3(x, y, z));
-    const half = [[0, 5, 1], [5, 7, 1], [5, 6, 7], [6, 12, 7], [7, 12, 8], [1, 7, 2], [7, 9, 2], [7, 8, 9], [8, 10, 9], [8, 13, 10], [12, 13, 8],
-      [2, 9, 3], [9, 11, 3], [9, 10, 11], [3, 11, 4], [11, 10, 4]];
-    const L = (i) => (i < 5 ? i : i + R.length); // the same corner on the left side
-    head.add(new THREE.Mesh(faceted(pts, [...half, ...half.map((t) => t.map(L))], new THREE.Vector3(0, 0, -.1)), glass));
+  // Open white spectacle frames. The eye cutouts pass through both sides of the head.
+  const frames = new THREE.Group();
+  for (const side of [-1, 1]) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.086, .012, 8, 48), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    ring.scale.y = .68;
+    ring.position.set(side * ex, ey, .43);
+    frames.add(ring);
   }
-  // tall faceted ears rising from the mask's temples, leaning slightly out
-  [-1, 1].forEach((sd) => {
-    const V = (x, y, z) => new THREE.Vector3(x * sd, y, z);
-    // base: front, outer, back, inner; a fold on the front face; the tip
-    const pts = [V(.1, .44, .26), V(.34, .2, .08), V(.22, .4, -.22), V(.05, .56, -.02), V(.24, .72, .16), V(.27, 1.05, 0)];
-    head.add(new THREE.Mesh(faceted(pts, [[0, 1, 4], [1, 5, 4], [0, 4, 3], [4, 5, 3], [1, 2, 5], [2, 3, 5]]), glass));
-  });
-
-  // long, straight, glossy black hair: a cap over the skull with a centre parting, and a curtain down each side
-  // falling over the shoulders to the chest
-  const hairMat = patch(new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: .25, metalness: .2, envMap: env, envMapIntensity: .9, flatShading: true, side: THREE.DoubleSide }));
-  const hairGeo = new THREE.SphereGeometry(1, 56, 44), hq = hairGeo.attributes.position, hi = hairGeo.index.array, hk = [];
-  const inHair = (i) => hq.getY(i) > .62 - .38 * (1 - hq.getZ(i));
-  for (let i = 0; i < hi.length; i += 3) if (inHair(hi[i]) && inHair(hi[i + 1]) && inHair(hi[i + 2])) hk.push(hi[i], hi[i + 1], hi[i + 2]);
-  hairGeo.setIndex(hk);
-  for (let i = 0; i < hq.count; i++) {
-    const x = hq.getX(i), [X, Y, Z] = sculpt(x, hq.getY(i), hq.getZ(i)), k = 1.03 - .014 * Math.exp(-((x / .04) ** 2)); // the parting
-    hq.setXYZ(i, X * k, Y * (k - .01), Z * k);
-  }
-  hairGeo.computeVertexNormals();
-  head.add(new THREE.Mesh(hairGeo, hairMat));
-  const strands = (sd) => {
-    const g = new THREE.PlaneGeometry(1, 1, 16, 24), q = g.attributes.position;
-    for (let i = 0; i < q.count; i++) {
-      const t = q.getX(i) + .5, f = .5 - q.getY(i); // t: front to back around the head, f: top to bottom
-      const r = .37 + .1 * f + .006 * Math.sin(i * 12.9898) * (f + .3), th = 1.25 + 1.6 * t - .25 * f; // starts behind the mask's side edge // a little jitter per vertex reads as strands
-      q.setXYZ(i, sd * r * Math.sin(th), .3 + head.position.y - 1.32 * f, r * Math.cos(th) * (1 - .25 * f) + .04 * f);
-    }
-    if (sd < 0) { const ix = g.index.array; for (let i = 0; i < ix.length; i += 3) [ix[i + 1], ix[i + 2]] = [ix[i + 2], ix[i + 1]]; } // mirrored: keep the outside as the front face
-    g.computeVertexNormals();
-    return new THREE.Mesh(g, hairMat);
-  };
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(.11, .018, .016), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  bridge.position.set(0, ey + .012, .43);
+  frames.add(bridge);
+  head.add(frames);
 
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(.1, .12, .34, 24, 1, true), mat);
   neck.position.set(0, -.36, -.06);
@@ -1232,21 +1220,8 @@ float wn(vec3 x) {
   const bustGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_BUST), { depth: .3, bevelEnabled: true, bevelThickness: .1, bevelSize: .05, bevelSegments: 3 });
   bustGeo.translate(0, 0, -.32);
   const wolf = new THREE.Group();
-  wolf.add(head, neck, new THREE.Mesh(bustGeo, mat), strands(-1), strands(1));
-  // layered crystal necklace under the mask's point, with drops on the lower rows, and long crystal earrings
-  const gem = new THREE.OctahedronGeometry(1, 0), gems = [];
-  [[.14, -.5, .05], [.19, -.55, .1], [.24, -.6, .15], [.29, -.65, .2]].forEach(([w, y0, d], row) => {
-    const n = 16 + row * 5;
-    for (let i = 0; i <= n; i++) {
-      const x = -w + 2 * w * i / n, y = y0 - d * (1 - (x / w) ** 2), sz = .011 + .004 * (i % 2);
-      gems.push([x, y, .12 + .01 * row, sz, sz]);
-      if (row > 1 && i % 3 === 1) gems.push([x, y - .035, .125 + .01 * row, .009, .022]);
-    }
-  });
-  [-1, 1].forEach((sd) => { for (let i = 0; i < 7; i++) gems.push([sd * .375, .1 - i * .045, .06, i % 3 === 1 ? .02 : .012, .016]); });
-  const jewels = new THREE.InstancedMesh(gem, crystal, gems.length), jm = new THREE.Object3D();
-  gems.forEach(([x, y, z, w, h], i) => { jm.position.set(x, y, z); jm.scale.set(w, h, w); jm.rotation.set(0, i * .7, 0); jm.updateMatrix(); jewels.setMatrixAt(i, jm.matrix); });
-  wolf.add(jewels);
+  wolf.add(head, neck, new THREE.Mesh(bustGeo, mat));
+  wolf.scale.z = .12; // shallow relief, almost a paper silhouette
   wolf.position.y = -.17;
   scene.add(wolf);
 
@@ -1261,7 +1236,7 @@ float wn(vec3 x) {
   silBox.classList.add('is-3d');
 
   // a click spins it a full turn; the custom cursor grows over it like over links
-  silBox.addEventListener('click', () => gsap.to(head3d, { spin: head3d.spin + Math.PI * 2, duration: calm ? .6 : 1.6, ease: 'power3.inOut', overwrite: true }));
+  // Keep the shallow silhouette facing forward so the transparent openings stay readable.
   silBox.addEventListener('pointerenter', () => cur.classList.add('big'));
   silBox.addEventListener('pointerleave', () => cur.classList.remove('big'));
 
@@ -1272,10 +1247,10 @@ float wn(vec3 x) {
     const t = ms / 1000;
     dissolve.value = calm ? 0 : Math.min(1.02, Math.max(head3d.enter, head3d.exit) * 1.02);
     clock.value = t;
-    live.value = calm ? 0 : .07 + .03 * Math.sin(t * .35); // a slow breath: a few small holes open and close
-    const ty = (state.mx - .5) * .6 + (calm ? 0 : Math.sin(t * .4) * .12) + head3d.spin;
+    live.value = calm ? .16 : .16 + .025 * Math.sin(t * .35); // a slow breath: a few small holes open and close
+    const ty = (state.mx - .5) * .12 + (calm ? 0 : Math.sin(t * .4) * .025);
     ry += (ty - ry) * .08;
-    rx += ((state.my - .5) * .25 - rx) * .08;
+    rx += ((state.my - .5) * .06 - rx) * .08;
     wolf.rotation.set(rx, ry, 0);
     renderer.render(scene, camera);
   });
@@ -1352,7 +1327,7 @@ tick(); setInterval(tick, 1000);
 $('#copy').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   try { await navigator.clipboard.writeText($('#mail').textContent); btn.textContent = 'COPIED +'; }
-  catch { getSelection().selectAllChildren($('#mail')); btn.textContent = 'SELECTED · CTRL+C'; }
+  catch { getSelection().selectAllChildren($('#mail')); btn.textContent = 'SELECTED � CTRL+C'; }
 });
 
 /* ---------- boot sequence ---------- */
@@ -1374,7 +1349,7 @@ gsap.timeline({ defaults: { ease: 'none' } })
 <script type="module">
 import { animate, stagger, cubicBezier } from 'animejs';
 
-// Paste from Supabase → Project Settings → API keys: the project URL and the anon (or publishable) key.
+// Paste from Supabase  Project Settings  API keys: the project URL and the anon (or publishable) key.
 // Both are public by design; access is enforced by Supabase Auth and the row level security in supabase.sql.
 const SUPABASE_URL = 'https://orzjyhrsoqdtslufafvn.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_x1chbdpP0KyIiJnS7TYc9w_BnHab8xF';
@@ -1417,7 +1392,7 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGate(); });
 document.addEventListener('focusin', (e) => { if (!gate.hidden && !gate.contains(e.target)) $('#t-close').focus(); }); // keep Tab inside the panel
 $('#t-in a.btn').addEventListener('click', closeGate);
 
-// 7–15 digits (the international maximum), with the usual separators and an optional leading +
+// 7-15 digits (the international maximum), with the usual separators and an optional leading +
 const validPhone = (p) => /^\+?[\d\s().-]{7,24}$/.test(p) && /^\d{7,15}$/.test(p.replace(/\D/g, ''));
 console.assert(validPhone('+49 151 2345 6789') && validPhone('(212) 555-0147') && !validPhone('12345') && !validPhone('call me'), 'phone check');
 
@@ -1441,7 +1416,7 @@ const shake = () => { if (!calm) animate(term, { translateX: [0, -7, 6, -4, 3, 0
 
 const OFFLINE = "TERMINAL OFFLINE. THE SITE OWNER HASN'T CONNECTED SUPABASE YET.";
 const MESSAGES = {
-  invalid_credentials: 'WRONG CALLSIGN OR PASSPHRASE.',
+  invalid_credentials: 'EMAIL OR PASSWORD IS INCORRECT. TRY AGAIN.',
   email_not_confirmed: 'CONFIRM YOUR EMAIL FIRST. THE LINK IS IN YOUR INBOX.',
   user_already_exists: 'THAT CALLSIGN IS ALREADY IN THE PACK. SIGN IN INSTEAD.',
   weak_password: 'PASSPHRASE IS TOO WEAK. USE A LONGER ONE.',
@@ -1463,12 +1438,13 @@ function explain(e) {
 function setMode(next, quiet = false) {
   mode = next === 'join' && invite ? 'join' : 'in';
   pass.autocomplete = mode === 'in' ? 'current-password' : 'new-password';
-  go.textContent = mode === 'in' ? 'AUTHENTICATE +' : 'JOIN THE PACK +';
+  go.textContent = mode === 'in' ? 'SIGN IN +' : 'JOIN THE PACK +';
+  $('#t-help').textContent = mode === 'join' ? 'Your invitation opens the door. Create your account below; your name and phone are used for the door list.' : 'Already a member? Sign in below. To join, open the invitation link shared with you.';
   joinFields.hidden = mode !== 'join';
   $('#t-invite').hidden = mode !== 'join';
   $('#t-reset').hidden = mode === 'join';
   $('#t-to-signin').hidden = mode !== 'join';
-  if (!quiet) say(mode === 'in' ? 'AWAITING SIGNAL_' : 'INVITATION ACCEPTED. NAME, PHONE, EMAIL, PASSPHRASE.');
+  if (!quiet) say(mode === 'in' ? 'ENTER YOUR EMAIL AND PASSWORD TO SIGN IN.' : 'INVITATION ACCEPTED. NAME, PHONE, EMAIL, PASSPHRASE.');
 }
 $('#t-to-signin').addEventListener('click', () => setMode('in'));
 
@@ -1484,7 +1460,7 @@ if (invite && /^https?:$/.test(location.protocol)) {
 const BAD_INVITE = 'THAT INVITE LINK IS INVALID, USED UP OR EXPIRED. ASK FOR A NEW ONE.';
 async function acceptInvite() {
   openGate();
-  say('CHECKING INVITATION…');
+  say('CHECKING INVITATION.');
   try {
     const { data: ok, error } = await sb.rpc('invite_ok', { c: invite });
     if (error) throw error;
@@ -1519,10 +1495,10 @@ form.addEventListener('submit', async (e) => {
     if (!last) { say('ENTER YOUR LAST NAME.', 'err'); shake(); $('#t-last').focus(); return; }
     if (!validPhone(phone)) { say('ENTER A PHONE NUMBER WITH COUNTRY CODE, LIKE +49 151 2345 6789.', 'err'); shake(); $('#t-phone').focus(); return; }
   }
-  if (!mail || !email.checkValidity()) { say('ENTER A VALID EMAIL AS YOUR CALLSIGN.', 'err'); shake(); email.focus(); return; }
-  if (pw.length < 6) { say('PASSPHRASE NEEDS AT LEAST 6 CHARACTERS.', 'err'); shake(); pass.focus(); return; }
+  if (!mail || !email.checkValidity()) { say('ENTER A VALID EMAIL ADDRESS.', 'err'); shake(); email.focus(); return; }
+  if (pw.length < 6) { say('PASSWORD NEEDS AT LEAST 6 CHARACTERS.', 'err'); shake(); pass.focus(); return; }
   go.disabled = true;
-  say(mode === 'in' ? 'VERIFYING SIGNAL…' : 'REGISTERING NEW MEMBER…');
+  say(mode === 'in' ? 'VERIFYING SIGNAL.' : 'REGISTERING NEW MEMBER.');
   try {
     const { auth } = await connect();
     if (mode === 'in') {
@@ -1553,7 +1529,7 @@ form.addEventListener('submit', async (e) => {
 
 $('#t-reset').addEventListener('click', async () => {
   const mail = email.value.trim();
-  if (!mail || !email.checkValidity()) { say('TYPE YOUR EMAIL ABOVE FIRST, THEN PRESS FORGOT PASSPHRASE.', 'err'); email.focus(); return; }
+  if (!mail || !email.checkValidity()) { say('TYPE YOUR EMAIL ABOVE FIRST, THEN PRESS RESET PASSWORD.', 'err'); email.focus(); return; }
   try {
     const { auth } = await connect();
     const { error } = await auth.resetPasswordForEmail(mail, { redirectTo: here() });
@@ -1568,7 +1544,7 @@ $('#t-reset').addEventListener('click', async () => {
 newForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const pw = $('#t-newpass').value;
-  if (pw.length < 6) { say('PASSPHRASE NEEDS AT LEAST 6 CHARACTERS.', 'err'); shake(); return; }
+  if (pw.length < 6) { say('PASSWORD NEEDS AT LEAST 6 CHARACTERS.', 'err'); shake(); return; }
   try {
     const { data, error } = await sb.auth.updateUser({ password: pw });
     if (error) throw error;
@@ -1596,7 +1572,7 @@ function seal() {
   msg.firstElementChild.textContent = 'THESE FILES OPEN FOR SIGNED-IN MEMBERS.';
 }
 async function declassify() {
-  count.textContent = 'DECRYPTING…';
+  count.textContent = 'DECRYPTING.';
   const { data: rows, error } = await sb.from('casefiles').select('no, title, kind, year, note').order('no');
   if (error) {
     count.textContent = 'LOCKED';
@@ -1614,7 +1590,7 @@ async function declassify() {
     return li;
   }));
   locked.hidden = true; list.hidden = false;
-  count.textContent = `${String(rows.length).padStart(2, '0')} FILES · DECLASSIFIED`;
+  count.textContent = `${String(rows.length).padStart(2, '0')} FILES � DECLASSIFIED`;
   msg.hidden = rows.length > 0;
   if (!rows.length) msg.firstElementChild.textContent = 'NO CLASSIFIED FILES YET. THE OWNER ADDS THEM IN SUPABASE.';
   if (!calm && rows.length) animate([...list.children], { opacity: [0, 1], translateX: [-12, 0], duration: 600, delay: stagger(70), ease: easeOut });
@@ -1624,7 +1600,7 @@ async function declassify() {
 const pad2 = (n) => String(n).padStart(2, '0');
 function dms(v, pos, neg) {
   const t = Math.round(Math.abs(v) * 3600);
-  return `${Math.floor(t / 3600)}°${pad2(Math.floor(t % 3600 / 60))}'${pad2(t % 60)}"${v >= 0 ? pos : neg}`;
+  return `${Math.floor(t / 3600)}�${pad2(Math.floor(t % 3600 / 60))}'${pad2(t % 60)}"${v >= 0 ? pos : neg}`;
 }
 function countdown(start, end, now = Date.now()) {
   if (now >= end) return 'ENDED';
@@ -1632,21 +1608,21 @@ function countdown(start, end, now = Date.now()) {
   const m = Math.floor((start - now) / 60000);
   return `${pad2(Math.floor(m / 1440))}D ${pad2(Math.floor(m % 1440 / 60))}H ${pad2(m % 60)}M`;
 }
-console.assert(dms(64.1475, 'N', 'S') === `64°08'51"N` && dms(-21.9425, 'E', 'W') === `21°56'33"W`, 'dms format');
+console.assert(dms(64.1475, 'N', 'S') === `64�08'51"N` && dms(-21.9425, 'E', 'W') === `21�56'33"W`, 'dms format');
 console.assert(countdown(Date.UTC(2026, 0, 2, 3, 4), Date.UTC(2026, 0, 3), Date.UTC(2026, 0, 1)) === '01D 03H 04M', 'countdown');
 
 // English to match the site copy; times still show in the viewer's own time zone
 const day = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase();
 const clock = (d) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 const slots = (key) => document.querySelectorAll(`[data-p="${key}"]`);
-const put = (key, text) => slots(key).forEach((el) => { el.textContent = text ?? '—'; });
+const put = (key, text) => slots(key).forEach((el) => { el.textContent = text ?? '-'; });
 const putList = (key, items) => slots(key).forEach((el) => el.replaceChildren(...items.map((t) => Object.assign(document.createElement('li'), { textContent: t }))));
 let partyTimer = 0;
 
 function clearParty() {
   clearInterval(partyTimer);
-  ['title', 'date', 'doors', 'ends', 'venue', 'address', 'city', 'lat', 'lon', 'entry', 'capacity', 'dress_code'].forEach((k) => put(k, '—'));
-  put('info', ''); put('countdown', '--D --H --M'); put('rules_count', '00'); put('state', '●');
+  ['title', 'date', 'doors', 'ends', 'venue', 'address', 'city', 'lat', 'lon', 'entry', 'capacity', 'dress_code'].forEach((k) => put(k, '-'));
+  put('info', ''); put('countdown', '--D --H --M'); put('rules_count', '00'); put('state', '?');
   putList('dress_notes', []); putList('rules', []);
   slots('maps').forEach((a) => { a.hidden = true; a.removeAttribute('href'); });
 }
@@ -1663,14 +1639,14 @@ async function loadParty() {
     return card;
   }));
   clearParty();
-  put('title', 'DECRYPTING…');
+  put('title', 'DECRYPTING.');
   const { data: p, error } = await sb.from('party').select('*').order('starts_at', { ascending: false }).limit(1).maybeSingle();
   if (error || !p) { put('title', error ? 'BRIEFING UNAVAILABLE. REFRESH TO TRY AGAIN.' : 'NO GATHERING SCHEDULED YET.'); return; }
 
   const start = new Date(p.starts_at), end = p.ends_at ? new Date(p.ends_at) : new Date(start.getTime() + 8 * 36e5);
-  put('title', p.title); put('date', day(start)); put('doors', clock(start)); put('ends', `${day(end)} · ${clock(end)}`);
+  put('title', p.title); put('date', day(start)); put('doors', clock(start)); put('ends', `${day(end)} � ${clock(end)}`);
   put('venue', p.venue); put('address', p.address); put('city', p.city); put('info', p.info ?? '');
-  put('entry', p.entry); put('capacity', p.capacity == null ? '—' : String(p.capacity));
+  put('entry', p.entry); put('capacity', p.capacity == null ? '-' : String(p.capacity));
   put('dress_code', p.dress_code);
   putList('dress_notes', p.dress_notes ?? []); putList('rules', p.rules ?? []);
   put('rules_count', pad2((p.rules ?? []).length));
@@ -1681,7 +1657,7 @@ async function loadParty() {
   const tick = () => {
     const c = countdown(start, end);
     put('countdown', c);
-    put('state', c === 'NOW LIVE' ? '● LIVE' : c === 'ENDED' ? '○ ENDED' : '● UPCOMING');
+    put('state', c === 'NOW LIVE' ? '? LIVE' : c === 'ENDED' ? '	 ENDED' : '? UPCOMING');
   };
   tick();
   partyTimer = setInterval(tick, 30000);
@@ -1698,7 +1674,7 @@ function render(user) {
   if (user) {
     const name = (user.user_metadata?.first_name ?? '').trim().toUpperCase();
     $('#t-who').textContent = user.email;
-    $('#t-open-label').textContent = name ? `MEMBER · ${name}` : 'MEMBER · CLEARANCE 07';
+    $('#t-open-label').textContent = name ? `MEMBER � ${name}` : 'MEMBER � CLEARANCE 07';
     say(name ? `WELCOME BACK, ${name}.` : 'WELCOME BACK TO THE PACK.', 'ok');
     if (!calm) animate('#t-in .granted', { opacity: [0, 1], translateY: [8, 0], duration: 700, ease: easeOut });
     // right after signing in, hold ACCESS GRANTED for a beat, then close so the panels arrive in view
@@ -1713,7 +1689,7 @@ function render(user) {
     loadParty().catch(() => put('title', 'BRIEFING UNAVAILABLE. REFRESH TO TRY AGAIN.'));
     declassify().catch(() => { count.textContent = 'LOCKED'; });
   } else {
-    $('#t-open-label').textContent = 'MEMBER ACCESS';
+    $('#t-open-label').textContent = 'SIGN IN / MEMBER ACCESS';
     clearParty();
     $('#briefing').replaceChildren();
     seal();
@@ -1736,3 +1712,4 @@ if (SUPABASE_URL && SUPABASE_KEY) {
 </script>
 </body>
 </html>
+
