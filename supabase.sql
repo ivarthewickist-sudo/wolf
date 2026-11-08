@@ -103,6 +103,8 @@ grant execute on function public.invite_ok(text) to anon, authenticated;
 -- Users you add yourself in Authentication -> Users with "Auto Confirm User" arrive already confirmed and
 -- skip the check. Public sign-ups arrive unconfirmed because email confirmation is on: keep it on, since
 -- turning it off would let unconfirmed-at-insert sign-ups through this bypass.
+-- Dashboard "Invite user" creates an unconfirmed account with no code, so it is refused; use "Create new user" with Auto Confirm.
+-- Codes are public-readable through invite_ok, so make them long and random (no guessable words).
 create or replace function public.check_invite() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin

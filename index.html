@@ -1387,6 +1387,9 @@ const term = $('#term'), form = $('#t-form'), email = $('#t-email'), pass = $('#
 const go = $('#t-go'), status = $('#t-status'), newForm = $('#t-new');
 const gate = $('#gate'), opener = $('#t-open'), joinFields = $('#t-join');
 let mode = 'in', sb = null, recovering = false, justIn = false, lastFocus = null;
+// read once at load: Supabase strips these from the URL after it signs the member in
+const recoveryLink = /type=recovery/.test(location.hash);
+const linkError = new URLSearchParams(location.hash.slice(1)).get('error_code');
 
 /* ---------- the overlay: MEMBER ACCESS opens it; CLOSE, Esc or a click outside closes it ---------- */
 function openGate() {
@@ -1451,6 +1454,7 @@ const MESSAGES = {
   signup_disabled: 'THE PACK IS CLOSED TO NEW MEMBERS RIGHT NOW.',
   email_provider_disabled: 'EMAIL SIGN-IN IS SWITCHED OFF IN SUPABASE. THE OWNER NEEDS TO ENABLE IT.',
   same_password: 'PICK A PASSPHRASE DIFFERENT FROM YOUR OLD ONE.',
+  otp_expired: 'THAT LINK HAS EXPIRED OR WAS ALREADY USED. ASK FOR A NEW ONE.',
 };
 function explain(e) {
   if (e?.code === 'offline') return OFFLINE;
@@ -1583,9 +1587,14 @@ newForm.addEventListener('submit', async (e) => {
 });
 
 $('#t-out-btn').addEventListener('click', async () => {
-  const { auth } = await connect();
-  await auth.signOut();
-  say('SIGNED OUT. THE FILES ARE SEALED AGAIN.');
+  try {
+    const { auth } = await connect();
+    const { error } = await auth.signOut();
+    if (error) throw error;
+    say('SIGNED OUT. THE FILES ARE SEALED AGAIN.');
+  } catch (err) {
+    say(explain(err), 'err');
+  }
 });
 
 /* ---------- classified files: read from Supabase, where row level security only answers signed-in members ---------- */
@@ -1723,12 +1732,14 @@ function render(user) {
 if (SUPABASE_URL && SUPABASE_KEY) {
   connect()
     .then(({ auth }) => auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') recovering = true;
+      // the recovery URL is also checked: PASSWORD_RECOVERY can fire before this listener is attached
+      if (event === 'PASSWORD_RECOVERY' || (event === 'INITIAL_SESSION' && session && recoveryLink)) recovering = true;
       if (event === 'SIGNED_OUT') recovering = false;
       // Supabase asks that the callback not await its own calls, so render on the next tick
       setTimeout(() => {
         render(session?.user ?? null);
         if (event === 'INITIAL_SESSION' && invite && !session) acceptInvite(); // only guests are offered the join form
+        else if (event === 'INITIAL_SESSION' && linkError && !session) { openGate(); say(explain({ code: linkError }), 'err'); }
       }, 0);
     }))
     .catch(() => say('NO SIGNAL FROM SUPABASE. REFRESH TO TRY AGAIN.', 'err'));
