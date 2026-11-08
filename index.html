@@ -1589,7 +1589,7 @@ newForm.addEventListener('submit', async (e) => {
 $('#t-out-btn').addEventListener('click', async () => {
   try {
     const { auth } = await connect();
-    const { error } = await auth.signOut();
+    const { error } = await auth.signOut({ scope: 'local' }); // this device only; other sessions stay signed in
     if (error) throw error;
     say('SIGNED OUT. THE FILES ARE SEALED AGAIN.');
   } catch (err) {
