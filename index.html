@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Wolf Case File</title>
+<title>WOLFRITUAL · Immersive nights for free souls.</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Wolf: art direction, motion and creative code, after dark.">
 <meta property="og:title" content="Wolf Case File">
@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Doto:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 /* Layout: fixed HUD rails left and right, a thermal wolf pinned dead centre, the case file scrolling in two columns around it,
-   then a pinned white profile, a red flood, and a red exit. A command bar runs along the bottom throughout. */
+   then a red exit. A command bar runs along the bottom throughout. */
 :root {
   --void: #020303;
   --ink: #e6ecee;
@@ -221,7 +221,7 @@ main { position: relative; z-index: 2; }
 
 /* story → work: the file redacts itself, gets stamped closed, and the case index unredacts.
    --redact (0–1) is scrubbed by scroll; bars stay at 0 unless the transition script sets them. */
-.line::after, .cases .name::after {
+.line::after, .brand-name::after {
   content: ""; position: absolute; left: -.15em; right: -.15em; top: .32em; bottom: .32em;
   background: var(--ink); transform: scaleX(var(--redact, 0)); transform-origin: left center; pointer-events: none;
 }
@@ -256,100 +256,19 @@ main { position: relative; z-index: 2; }
   -webkit-mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
   mask-image: linear-gradient(to right, transparent, #000 28%, #000 72%, transparent);
 }
-.sec-head { position: relative; display: flex; justify-content: space-between; gap: 16px; padding-bottom: 12px; font-size: 9.5px; }
-.sec-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); transform: scaleX(var(--draw, 1)); transform-origin: left; }
-.cases { list-style: none; margin: 0; padding: 0; }
-.cases li {
-  display: grid; grid-template-columns: 3.2em minmax(0, 1fr) auto 4em; align-items: baseline; gap: 16px;
-  padding: 16px 10px; border-bottom: 1px solid var(--line);
-  transition: background .15s steps(2), color .15s steps(2);
+.brand { min-height: 64vh; display: grid; place-content: center; justify-items: center; gap: clamp(14px, 2.4vw, 26px); text-align: center; }
+.brand-name {
+  position: relative; margin: 0; max-width: 100%;
+  font: 900 clamp(34px, 8.6vw, 150px)/.9 var(--display); letter-spacing: .02em;
+  text-shadow: 0 0 24px rgba(2, 3, 3, .9); white-space: nowrap;
 }
-.cases .name { position: relative; justify-self: start; font: 900 clamp(26px, 4.4vw, 58px)/1 var(--display); letter-spacing: .02em; overflow-wrap: anywhere; }
-.cases .name::after { top: .06em; bottom: .06em; transform-origin: right center; } /* rows unredact left to right */
-.cases .no, .cases .yr { font: 500 10px var(--mono); }
-.cases .yr { text-align: right; }
-.cases li:hover { background: var(--blood); color: var(--void); }
+.brand-name::after { top: .06em; bottom: .06em; transform-origin: right center; }
+.brand-tag {
+  margin: 0; padding: 6px 12px; background: rgba(2, 3, 3, .72); border: 1px solid var(--line);
+  font: 600 clamp(13px, 1.6vw, 20px)/1.3 var(--text); letter-spacing: .14em; text-transform: uppercase; color: var(--ink);
+}
+.brand-tag::before { content: "\25CF  "; color: var(--blood); }
 
-/* classified: members-only case files, redacted until signed in */
-#classified { padding-block: 0 22vh; }
-.redacted li { cursor: default; }
-.redacted li:hover { background: none; color: inherit; }
-.bars { display: flex; gap: 10px; flex-wrap: wrap; }
-.bars i { display: block; height: clamp(22px, 3.4vw, 44px); background: var(--ink); opacity: .85; }
-.unlock { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 10px; font-size: 9.5px; color: var(--dim); }
-.unlock a { color: var(--blood); }
-.cl .note { grid-column: 2 / -1; color: var(--dim); font-size: 9.5px; line-height: 1.6; text-transform: none; }
-
-/* profile: pinned white specimen sheet */
-#profile { position: relative; z-index: 2; height: 360vh; }
-.pin {
-  position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
-  background: var(--chalk); color: var(--soot);
-}
-/* work → profile: the white section arrives with a liquid top edge, the twin of the red flood into the exit.
-   The edge belongs to the section (absolute at its top, inside it), so no white shows before the section does;
-   it scrolls in with the section and slides away as the pin takes over. Two wave layers are flipped upside down
-   so they fill ABOVE the wave line: page black on top, an ash band, then the chalk sheet underneath.
-   wave() redraws them with the red flood's paths. */
-.profile-edge { position: absolute; left: 0; right: 0; top: 0; height: 20vh; z-index: 1; pointer-events: none; }
-.profile-edge svg { position: absolute; left: 0; width: 100%; top: 0; transform: scaleY(-1); }
-.profile-edge .ash { height: 100%; }
-.profile-edge .ash path { fill: var(--ash); }
-.profile-edge .void { height: 76%; }
-.profile-edge .void path { fill: var(--void); }
-#terrain { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.claws-pos { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); }
-.claws { display: flex; gap: 3.2vw; transform: rotate(-32deg); }
-.claw {
-  width: 6vw; height: 150vh; background: var(--blood); transform-origin: 50% 0;
-  clip-path: polygon(50% 0, 100% 7%, 100% 90%, 50% 100%, 0 90%, 0 7%);
-}
-.claw:nth-child(2) { margin-top: -8vh; }
-.sil {
-  position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto;
-  height: 94%; aspect-ratio: 600 / 700; max-width: 100%; display: block;
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, .35));
-}
-/* the flat SVG head is the fallback; once three.js loads, a 3D head (canvas) takes its place in the same box */
-.sil > svg, .sil > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.sil.is-3d > svg { display: none; }
-.sil.is-3d { filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .16)); }
-.sil .body { fill: var(--paper); }
-.sil .x { stroke: var(--soot); stroke-width: 2; fill: none; }
-.sil .dot { fill: var(--blood); }
-.pl { position: absolute; font-size: 9.5px; line-height: 1.5; }
-.pl.tl { top: calc(14px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); }
-.pl.tr { top: calc(14px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); text-align: right; }
-.pl.h1 { left: calc(50% - min(29vh, 40vw)); top: 30%; text-align: right; transform: translateX(-100%); }
-.pl.h2 { left: calc(50% + min(29vh, 40vw)); top: 26%; }
-.pl.h3 { left: calc(50% + min(31vh, 42vw)); top: 50%; }
-.pl b { font: 700 11px var(--mono); }
-.teeth {
-  position: absolute; left: calc(50% - min(40vh, 44vw)); top: 56%;
-  transform: translate(-50%, -50%) rotate(-90deg);
-  display: flex; align-items: baseline; gap: 10px;
-  font: 900 clamp(56px, 9vw, 150px)/1 var(--display); font-variant-numeric: tabular-nums;
-}
-.teeth small { font: 700 10px var(--text); letter-spacing: .14em; }
-.traits {
-  position: absolute; left: 50%; top: 66%; transform: translateX(-50%);
-  display: grid; grid-template-columns: auto auto; column-gap: 26px;
-  font-size: 9px; line-height: 1.4;
-}
-.traits div { display: flex; flex-direction: column; }
-.traits div:first-child { text-align: right; }
-.barcode {
-  position: absolute; left: calc(50% - 120px); bottom: calc(var(--bar) + 28px); width: 92px; height: 26px;
-  background: repeating-linear-gradient(90deg, var(--soot) 0 2px, transparent 2px 3px, var(--soot) 3px 4px, transparent 4px 7px, var(--soot) 7px 10px, transparent 10px 12px);
-}
-.barcode + span { position: absolute; left: calc(50% - 120px); bottom: calc(var(--bar) + 10px); font-size: 8.5px; }
-.flood { position: absolute; left: 0; right: 0; bottom: 0; height: 118%; display: flex; flex-direction: column; transform: translateY(105%); }
-.flood svg { width: 100%; height: 15%; display: block; margin-bottom: -1px; }
-.flood .fill { flex: 1; }
-.flood-black path { fill: var(--soot); }
-.flood-black .fill { background: var(--soot); }
-.flood-red path { fill: var(--blood); }
-.flood-red .fill { background: var(--blood); }
 
 /* exit: red footer */
 #exit {
@@ -433,8 +352,6 @@ body.is-red .crt { opacity: .6; animation: none; }
 
 @media (min-width: 900px) {
   main { margin-inline: calc(var(--rail) + 8px); }
-  .pl.tl { left: calc(var(--rail) + 20px); }
-  .pl.tr { right: calc(var(--rail) + 20px); }
   .exit-in { padding-left: calc(var(--rail) + 20px); padding-right: calc(var(--rail) + 20px); }
 }
 @media (max-width: 899px) {
@@ -449,19 +366,9 @@ body.is-red .crt { opacity: .6; animation: none; }
   #wolf { width: min(92vw, 70vh); opacity: .5; }
   .story { grid-template-columns: 1fr; padding-block: 0 24vh; text-align: center; }
   .term { text-align: left; }
-  .col-l, .col-r { grid-column: 1; text-align: center; align-items: center; }
-  .col-r { margin-top: 1.9em; }
-  .cases li { grid-template-columns: 2.4em minmax(0, 1fr) 3em; }
-  .cases .what { display: none; }
+  .brand-tag { letter-spacing: .08em; }
   .bar .clock { display: none; }
   .bar nav { gap: 12px; }
-  #profile { height: 300vh; }
-  .sil { height: 72%; }
-  .claw { width: 11vw; }
-  .teeth { left: 14%; top: 40%; }
-  .pl.h1, .pl.h2, .pl.h3 { display: none; }
-  .traits { top: 70%; font-size: 8.5px; column-gap: 16px; }
-  .barcode, .barcode + span { left: 16px; }
   .exit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) {
@@ -533,52 +440,6 @@ body.is-red .crt { opacity: .6; animation: none; }
     </div>
     <div class="briefing" id="briefing" aria-label="Party briefing"></div>
     <h1>CASE FILE 07 · THE ONE THAT KEPT WATCHING</h1>
-    <div class="col col-l">
-      <span class="line">NOBODY SAW IT ARRIVE.</span>
-      <span class="line">THAT WAS THE FIRST CLUE.</span>
-      <span class="line">IT WORKED AFTER DARK, WHEN THE BRIEFS WENT QUIET.</span>
-      <span class="line">WHEN THE MEETINGS ENDED AND THE LIGHTS STAYED ON.</span>
-      <span class="line">IT DID NOT CHASE TRENDS.</span>
-      <span class="line">TRENDS WERE SLOW, LOUD AND EASY TO CATCH.</span>
-      <span class="line">IT WAITED FOR THE IDEA THAT TRIED TO HIDE.</span>
-      <span class="line">THEN IT MOVED.</span>
-      <span class="line">A GRID WAS NEVER JUST A GRID.</span>
-      <span class="line">A TYPEFACE WAS A VOICE WITH TEETH.</span>
-      <span class="line">MOTION WAS THE MOMENT THE PREY NOTICED.</span>
-      <span class="line">IT KEPT THE SAFE OPTIONS IN A DRAWER.</span>
-      <span class="line">IT RARELY OPENED THE DRAWER.</span>
-      <span class="line">CLIENTS CALLED IT DIFFICULT.</span>
-      <span class="line">THEY ALSO CALLED IT BACK.</span>
-      <span class="line">EVERY PROJECT BEGAN THE SAME WAY.</span>
-      <span class="line">CIRCLE THE PROBLEM.</span>
-      <span class="line">SMELL WHAT IS WRONG WITH IT.</span>
-      <span class="line">WAIT UNTIL IT SHOWS ITS WEAK SIDE.</span>
-      <span class="line">CUT.</span>
-      <span class="line">MOST WORK DIES OF POLITENESS.</span>
-    </div>
-    <div class="col col-r">
-      <span class="line">IT REFUSED TO BE POLITE.</span>
-      <span class="line">IT LIKED RESTRAINT.</span>
-      <span class="line">IT HATED FEAR DRESSED UP AS RESTRAINT.</span>
-      <span class="line">IT KNEW THE DIFFERENCE, MOST NIGHTS.</span>
-      <span class="line">SOME NIGHTS IT STRIPPED A PAGE TO ALMOST NOTHING.</span>
-      <span class="line">SOME NIGHTS IT ADDED ONE STRANGE THING TOO MANY.</span>
-      <span class="line">A TRANSITION THAT SHOULD NOT WORK.</span>
-      <span class="line">A COLOR NOBODY APPROVED.</span>
-      <span class="line">A DETAIL NOBODY ASKED FOR.</span>
-      <span class="line">WHY IS THIS HERE, SOMEONE ASKED.</span>
-      <span class="line">EXACTLY.</span>
-      <span class="line">THE PACK DOES NOT NEED ANOTHER PRETTY THING.</span>
-      <span class="line">PRETTY THINGS GET SHIPPED AND FORGOTTEN.</span>
-      <span class="line">IT WANTED WORK WITH A PULSE.</span>
-      <span class="line">WORK THAT HOLDS A STARE.</span>
-      <span class="line">WORK THAT IS STILL THERE WHEN YOU LOOK AWAY.</span>
-      <span class="line">DESIGN. MOTION. CODE. IMAGE.</span>
-      <span class="line">DIFFERENT TERRITORY.</span>
-      <span class="line">SAME HUNGER.</span>
-      <span class="line">THE FILE STAYS OPEN.</span>
-      <span class="line">IT IS PROBABLY WATCHING YOU SCROLL.</span>
-    </div>
     <div class="stamp" aria-hidden="true"><span>CASE FILE 07</span><b>CLOSED</b><span>CONTINUE TO INDEX ↓</span></div>
   </section>
 
@@ -587,58 +448,13 @@ body.is-red .crt { opacity: .6; animation: none; }
       <canvas class="work-glow" width="64" height="36"></canvas>
       <video class="work-bg" src="assets/ascii-magic-four-girls-independent.webm" poster="assets/den-ascii-magic-3-poster.jpg" muted loop playsinline preload="metadata"></video>
     </div>
-    <div class="sec-head"><span>CASE INDEX</span><span class="d">05 FILES · SORTED BY LAST SIGHTING</span></div>
-    <ol class="cases">
-      <li><span class="no">01</span><span class="name">NIGHT SHIFT</span><span class="what">BRAND SYSTEM</span><span class="yr">2026</span></li>
-      <li><span class="no">02</span><span class="name">PACK SIGNAL</span><span class="what">MOTION IDENTITY</span><span class="yr">2025</span></li>
-      <li><span class="no">03</span><span class="name">COLD OPEN</span><span class="what">WEBGL SITE</span><span class="yr">2025</span></li>
-      <li><span class="no">04</span><span class="name">TERRITORY</span><span class="what">ART DIRECTION</span><span class="yr">2024</span></li>
-      <li><span class="no">05</span><span class="name">LOW MOON</span><span class="what">PHOTOGRAPHY</span><span class="yr">2024</span></li>
-    </ol>
+    <div class="brand">
+      <h2 class="brand-name">WOLFRITUAL</h2>
+      <p class="brand-tag">Immersive nights for free souls.</p>
+    </div>
   </section>
 
-  <section id="classified">
-    <div class="sec-head"><span>CLASSIFIED · PACK MEMBERS ONLY</span><span class="d" id="cl-count">LOCKED</span></div>
-    <ol class="cases redacted" id="cl-locked" aria-label="Locked files">
-      <li><span class="no">C1</span><span class="bars"><i style="width: 38%"></i><i style="width: 22%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
-      <li><span class="no">C2</span><span class="bars"><i style="width: 54%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
-      <li><span class="no">C3</span><span class="bars"><i style="width: 26%"></i><i style="width: 31%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
-    </ol>
-    <ol class="cases cl" id="cl-list" hidden></ol>
-    <div class="unlock" id="cl-msg"><span>THESE FILES OPEN FOR SIGNED-IN MEMBERS.</span><a href="#index" data-open-term>SIGN IN TO DECLASSIFY +</a></div>
-  </section>
 </main>
-
-<section id="profile" aria-label="Subject profile">
-  <div class="profile-edge" aria-hidden="true">
-    <svg class="ash" viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg>
-    <svg class="void" viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg>
-  </div>
-  <div class="pin">
-    <canvas id="terrain" aria-hidden="true"></canvas>
-    <div class="claws-pos" aria-hidden="true"><div class="claws"><i class="claw"></i><i class="claw"></i><i class="claw"></i></div></div>
-    <div class="sil" aria-hidden="true">
-      <svg viewBox="0 0 600 700">
-        <path class="body" d="M300 520 L250 470 L215 400 L170 370 L185 330 L150 300 L165 250 L140 200 L150 40 L235 150 L300 135 L365 150 L450 40 L460 200 L435 250 L450 300 L415 330 L430 370 L385 400 L350 470 Z M300 495 L240 520 L170 560 L60 620 L0 660 L0 700 L600 700 L600 660 L540 620 L430 560 L360 520 Z"/>
-        <path class="x" d="M222 268h26M235 255v26M352 268h26M365 255v26"/>
-        <rect class="dot" x="436" y="72" width="7" height="18"/>
-      </svg>
-    </div>
-    <div class="pl tl">SUBJECT PROFILE<br><span class="d">CANIS LUPUS · SPECIMEN 07</span></div>
-    <div class="pl tr">ART DIRECTION<br>MOTION<br>CREATIVE CODE</div>
-    <div class="pl h1">HEARING<br><b>≈10 KM</b></div>
-    <div class="pl h2">SMELL<br><b>≈100× YOURS</b></div>
-    <div class="pl h3">TOP SPEED<br><b>≈60 KM/H</b></div>
-    <div class="teeth"><span id="teeth">0000</span><small>MIN : SEC LEFT</small></div>
-    <div class="traits">
-      <div><span class="w">FERAL</span><span class="w">NOCTURNAL</span><span class="w">PATIENT</span><span class="w">PRECISE</span><span class="w">UNTAMED</span><span class="w">LOYAL</span><span class="w">TERRITORIAL</span><span class="w">CURIOUS</span><span class="w">RESTLESS</span><span class="w">SHARP</span><span class="w">QUIET</span><span class="w">HUNGRY</span></div>
-      <div><span class="w">DISTINCTIVE</span><span class="w">FUNCTIONAL</span><span class="w">EXPERIMENTAL</span><span class="w">STRANGE</span><span class="w">DELIBERATE</span><span class="w">RAW</span><span class="w">CONCEPTUAL</span><span class="w">PHYSICAL</span><span class="w">CINEMATIC</span><span class="w">CRAFTED</span><span class="w">HONEST</span><span class="w">ALIVE</span></div>
-    </div>
-    <i class="barcode" aria-hidden="true"></i><span>FILE 07/B</span>
-    <div class="flood flood-black" aria-hidden="true"><svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg><div class="fill"></div></div>
-    <div class="flood flood-red" aria-hidden="true"><svg viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0 100 L0 55 L1000 55 L1000 100 Z"/></svg><div class="fill"></div></div>
-  </div>
-</section>
 
 <section id="exit" aria-label="Contact">
   <div class="exit-in gut" style="display: grid; gap: 28px;">
@@ -658,16 +474,16 @@ body.is-red .crt { opacity: .6; animation: none; }
           </g>
         </g>
       </svg>
-      <nav class="lbl tl" aria-label="Sections"><a href="#index">INDEX</a><a href="#work">WORK</a><a href="#profile">PROFILE</a></nav>
+      <nav class="lbl tl" aria-label="Sections"><a href="#index">INDEX</a><a href="#work">WORK</a></nav>
       <div class="lbl br"><span>TAPETUM LUCIDUM</span><span class="chip">OBSERVING</span></div>
     </div>
     <div class="exit-grid">
       <div><h3>01 · SUBJECT</h3>ART DIRECTION<br>MOTION IDENTITY<br>CREATIVE CODE<br>IMAGE</div>
       <div><h3>02 · SIGNAL</h3><div class="mail"><code id="mail">howl@yourdomain.com</code><button class="btn" id="copy" type="button">COPY +</button></div></div>
-      <div><h3>03 · ROUTES</h3><ol><li><a href="#index">INDEX</a></li><li><a href="#work">WORK</a></li><li><a href="#profile">PROFILE</a></li></ol></div>
+      <div><h3>03 · ROUTES</h3><ol><li><a href="#index">INDEX</a></li><li><a href="#work">WORK</a></li></ol></div>
       <div><h3>04 · STATUS</h3>AVAILABLE FOR NIGHT SHIFTS<br>REMOTE · ANY TIME ZONE</div>
     </div>
-    <div class="exit-foot"><span>© 2026 WOLF · ALL TERRITORY RESERVED</span><a href="#index">BACK TO THE DARK ↑</a></div>
+    <div class="exit-foot"><span>© 2026 WOLFRITUAL · ALL TERRITORY RESERVED</span><a href="#index">BACK TO THE DARK ↑</a></div>
   </div>
 </section>
 
@@ -675,7 +491,6 @@ body.is-red .crt { opacity: .6; animation: none; }
   <nav aria-label="Sections">
     <a href="#index" class="on">INDEX</a>
     <a href="#work">WORK</a>
-    <a href="#profile">PROFILE</a>
     <a href="#exit">EXIT</a>
   </nav>
   <div class="right">
@@ -708,7 +523,7 @@ body.is-red .crt { opacity: .6; animation: none; }
     <div id="t-in" hidden>
       <div class="granted">ACCESS GRANTED</div>
       <div class="row" style="margin-block: 10px 12px;"><span class="who" id="t-who"></span><span class="chip">CLEARANCE 07</span></div>
-      <div class="actions"><a class="btn" href="#classified">OPEN CLASSIFIED FILES +</a><button type="button" class="btn ghost" id="t-out-btn">SIGN OUT</button></div>
+      <div class="actions"><button type="button" class="btn ghost" id="t-out-btn">SIGN OUT</button></div>
     </div>
 
     <form id="t-new" hidden novalidate>
@@ -730,8 +545,7 @@ body.is-red .crt { opacity: .6; animation: none; }
   "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js",
   "gsap/": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/",
   "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.4.1/dist/bundles/anime.esm.min.js",
-  "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.27/dist/lenis.mjs",
-  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js"
+  "lenis": "https://cdn.jsdelivr.net/npm/lenis@1.3.27/dist/lenis.mjs"
 } }
 </script>
 <script type="module">
@@ -893,13 +707,9 @@ addEventListener('pointermove', (e) => {
   state.mx = e.clientX / innerWidth; state.my = e.clientY / innerHeight;
   curL.textContent = `X ${pad(e.clientX)} · Y ${pad(e.clientY)}`;
 });
-$$('a, button, .cases li, .eyeband').forEach((el) => {
+$$('a, button, .eyeband').forEach((el) => {
   el.addEventListener('pointerenter', () => cur.classList.add('big'));
   el.addEventListener('pointerleave', () => cur.classList.remove('big'));
-});
-$$('.cases li').forEach((el) => {
-  el.addEventListener('pointerenter', () => { state.hot = 1; });
-  el.addEventListener('pointerleave', () => { state.hot = 0; });
 });
 
 /* ---------- scramble reveal ---------- */
@@ -961,28 +771,16 @@ if (!calm) {
 }
 
 const fill = $('#fill');
-let themeST = null; // the profile's theme trigger, created below; theme() is a no-op until then
-ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { state.scroll = s.progress; fill.style.transform = `scaleX(${s.progress})`; theme(); } });
+ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { state.scroll = s.progress; fill.style.transform = `scaleX(${s.progress})`; } });
 gsap.fromTo('#wolf', { opacity: 1, '--ws': 1 }, { opacity: .16, '--ws': calm ? 1 : .72, ease: 'none', scrollTrigger: { trigger: '#work', start: 'top 75%', end: 'top 20%', scrub: true } });
 
-/* ---------- story → work: the file redacts itself, is stamped CLOSED, and the case index unredacts ---------- */
 if (!calm) {
-  // the closing lines of both columns, interleaved so the bars sweep down the page in reading order
-  const L = $$('.col-l .line').slice(-16), R = $$('.col-r .line').slice(-16);
-  const tail = L.flatMap((l, i) => [l, R[i]]).filter(Boolean);
-  gsap.timeline({ scrollTrigger: { trigger: R[R.length - 1], start: 'top 78%', end: 'top 22%', scrub: true } })
-    .to(tail, { '--redact': 1, duration: .07, stagger: .04, ease: 'power2.inOut' }, 0)
-    .fromTo('.stamp', { opacity: 0, scale: 1.7, rotate: -18 }, { opacity: 1, scale: 1, rotate: -7, duration: .3, ease: 'back.out(2.2)' }, '>-.05');
-
-  gsap.fromTo('#work .sec-head', { '--draw': 0 }, { '--draw': 1, ease: 'none', scrollTrigger: { trigger: '#work .sec-head', start: 'top 92%', end: 'top 62%', scrub: true } });
-  // each case arrives redacted; the bar slides off, the name scrambles in, then the details fade up
-  $$('#work .cases li').forEach((li) => {
-    const name = li.querySelector('.name');
-    name.dataset.text = name.textContent;
-    gsap.timeline({ scrollTrigger: { trigger: li, start: 'top 94%', end: 'top 66%', scrub: true, onEnter: () => scramble(name, .5) } })
-      .fromTo(name, { '--redact': 1 }, { '--redact': 0, ease: 'power2.inOut' }, 0)
-      .fromTo(li.querySelectorAll('.no, .what, .yr'), { opacity: 0 }, { opacity: 1, ease: 'none' }, .35);
-  });
+  // the name arrives redacted; the bar slides off and it scrambles in, then the slogan fades up
+  const bn = $('.brand-name');
+  bn.dataset.text = bn.textContent;
+  gsap.timeline({ scrollTrigger: { trigger: '.brand', start: 'top 80%', end: 'top 35%', scrub: true, onEnter: () => scramble(bn, .7) } })
+    .fromTo(bn, { '--redact': 1 }, { '--redact': 0, ease: 'power2.inOut' }, 0)
+    .fromTo('.brand-tag', { opacity: 0, y: 12 }, { opacity: 1, y: 0, ease: 'none' }, .35);
 }
 const navLinks = $$('.bar nav a');
 navLinks.forEach((a) => {
@@ -991,209 +789,9 @@ navLinks.forEach((a) => {
     onToggle: (s) => { if (s.isActive) { navLinks.forEach((x) => x.classList.remove('on')); a.classList.add('on'); } },
   });
 });
-// re-ink the HUD: white while the profile is pinned, red once the flood has passed the middle of the screen
-// Worked out from the live scroll position against the trigger's measured start/end, and re-checked on every
-// scroll and refresh, so a refresh that lands mid-scroll can't leave a stale theme (that once blanked the wolf at the top).
-const FLOOD_AT = .86;
-function theme() {
-  if (!themeST) return;
-  const { start, end } = themeST, p = end > start ? (scrollY - start) / (end - start) : -1;
-  body.classList.toggle('is-light', p >= 0 && p < FLOOD_AT);
-  body.classList.toggle('is-red', p >= FLOOD_AT);
-}
-themeST = ScrollTrigger.create({ trigger: '#profile', start: 'top top', end: 'bottom bottom', onUpdate: theme, onToggle: theme, onRefresh: theme });
-ScrollTrigger.addEventListener('refresh', theme);
 
-/* ---------- profile (anime.js): power-on, claw marks, counter, traits, flood ---------- */
-const prof = $('#profile');
 const observers = [];
 const watch = (o) => (observers.push(o), o);
-
-
-const tcv = $('#terrain'), tctx = tcv.getContext('2d');
-const ASH = getComputedStyle(document.documentElement).getPropertyValue('--ash').trim();
-const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
-const smooth = (t) => t * t * (3 - 2 * t);
-function noise(x, y) {
-  const xi = Math.floor(x), yi = Math.floor(y), u = smooth(x - xi), v = smooth(y - yi);
-  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
-  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-}
-const fbm = (x, y) => noise(x, y) * .55 + noise(x * 2.1, y * 2.1) * .3 + noise(x * 4.3, y * 4.3) * .15;
-let TW = 0, TH = 0, tdpr = 1, terrainP = 0, terrainQueued = false;
-function drawTerrain() {
-  terrainQueued = false;
-  const step = 6 * tdpr, drift = terrainP * 1.6;
-  tctx.clearRect(0, 0, TW, TH);
-  tctx.fillStyle = ASH;
-  for (let y = 0; y < TH; y += step) for (let x = 0; x < TW; x += step) {
-    const n = fbm(x / tdpr * .0035 + drift, y / tdpr * .005 - drift * .4);
-    const s = Math.min(1, Math.max(0, (n - .44) * 5)) * step * .78; // halftone: white land, dotted sea
-    if (s > .8) tctx.fillRect(x + (step - s) / 2, y + (step - s) / 2, s, s);
-  }
-}
-const queueTerrain = (p) => { terrainP = p; if (!terrainQueued) { terrainQueued = true; requestAnimationFrame(drawTerrain); } };
-function sizeTerrain() {
-  tdpr = Math.min(1.5, devicePixelRatio || 1);
-  TW = tcv.width = Math.round(tcv.clientWidth * tdpr);
-  TH = tcv.height = Math.round(tcv.clientHeight * tdpr);
-  queueTerrain(terrainP);
-}
-sizeTerrain();
-addEventListener('resize', sizeTerrain);
-
-// DUMMY event start for now: replace with the next party's real start time.
-// The counter is a live minutes:seconds countdown to that start.
-const EVENT_START = new Date('2026-11-21T22:00:00+01:00');
-const teeth = $('#teeth');
-const countdownMMSS = () => {
-  const s = Math.max(0, Math.floor((EVENT_START - Date.now()) / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-};
-const tickCountdown = () => { teeth.textContent = countdownMMSS(); };
-tickCountdown();
-setInterval(tickCountdown, 1000);
-createTimeline({
-  defaults: { ease: 'linear' },
-  autoplay: watch(onScroll({ target: prof, enter: 'top top', leave: 'bottom bottom', sync: true })), // Lenis already smooths the scroll; a second smoothing layer would lag
-  onUpdate: (self) => queueTerrain(self.progress),
-})
-  .add('.sil', { scale: [.86, 1.04], translateY: ['6%', '0%'], duration: 700, ease: easeOut }, 0)
-  .add('.claw', { scaleY: [0, 1], duration: 240, delay: stagger(70), ease: easeOut }, 40)
-  .add('.traits .w', { opacity: [0, 1], duration: 40, delay: stagger(14) }, 240)
-  .add('.claws', { rotate: [-32, -14], translateX: ['0vw', '-5vw'], duration: 520, ease: easeInOut }, 300)
-  .add('.flood-black', { translateY: ['105%', '-6%'], duration: 210, ease: easeOut }, 760)
-  .add('.flood-red', { translateY: ['105%', '0%'], duration: 200, ease: easeOut }, 790);
-
-/* ---------- profile head in 3D (three.js, loaded as the profile comes near) ----------
-   The flat outline extruded into a faceted, chamfered head and chest. Holes with red-hot edges eat through it
-   while the section arrives and close as it pins; they open again as the red flood comes in. A click spins it
-   a full turn. If WebGL or three.js is unavailable, the flat SVG head simply stays. */
-const silBox = $('.sil');
-const OUTLINE_HEAD = [[300, 520], [250, 470], [215, 400], [170, 370], [185, 330], [150, 300], [165, 250], [140, 200], [150, 40], [235, 150], [300, 135], [365, 150], [450, 40], [460, 200], [435, 250], [450, 300], [415, 330], [430, 370], [385, 400], [350, 470]];
-const OUTLINE_CHEST = [[300, 495], [240, 520], [170, 560], [60, 620], [0, 660], [0, 700], [600, 700], [600, 660], [540, 620], [430, 560], [360, 520]];
-const smooth01 = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
-const head3d = { enter: 1, exit: 0, spin: 0 };
-const setEnter = (s) => { head3d.enter = 1 - s.progress; };
-const setExit = (s) => { head3d.exit = smooth01(.72, .86, s.progress); }; // the red flood starts at ~.76 of the pin
-ScrollTrigger.create({ trigger: prof, start: 'top bottom', end: 'top top', onUpdate: setEnter, onRefresh: setEnter });
-ScrollTrigger.create({ trigger: prof, start: 'top top', end: 'bottom bottom', onUpdate: setExit, onRefresh: setExit });
-
-async function startHead3d() {
-  const THREE = await import('three');
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // throws without WebGL
-  renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
-  silBox.append(renderer.domElement);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(28, 600 / 700, .1, 50);
-  camera.position.set(0, 0, 4.15);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xaeb3b5, 1.7));
-  const key = new THREE.DirectionalLight(0xffffff, 2.3); key.position.set(-2, 2.5, 3); scene.add(key);
-  const rim = new THREE.DirectionalLight(0xffe0d8, .9); rim.position.set(3, -1, -2); scene.add(rim);
-
-  // SVG units (600x700, y down) -> scene units centred on the head, y up
-  const toShape = (pts) => {
-    const s = new THREE.Shape();
-    pts.forEach(([x, y], i) => { const X = (x - 300) / 350, Y = (350 - y) / 350; if (i) s.lineTo(X, Y); else s.moveTo(X, Y); });
-    s.closePath();
-    return s;
-  };
-  const dissolve = { value: 1 };
-  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .85, metalness: 0, flatShading: true });
-  mat.onBeforeCompile = (sh) => {
-    sh.uniforms.uDissolve = dissolve;
-    sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vObj;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObj = position;');
-    sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', `#include <common>
-uniform float uDissolve;
-varying vec3 vObj;
-float wh(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
-float wn(vec3 x) {
-  vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
-  return mix(mix(mix(wh(i), wh(i + vec3(1, 0, 0)), f.x), mix(wh(i + vec3(0, 1, 0)), wh(i + vec3(1, 1, 0)), f.x), f.y),
-             mix(mix(wh(i + vec3(0, 0, 1)), wh(i + vec3(1, 0, 1)), f.x), mix(wh(i + vec3(0, 1, 1)), wh(i + vec3(1, 1, 1)), f.x), f.y), f.z);
-}`)
-      // noise in the model's own space, so the holes stay put on the head as it turns
-      .replace('void main() {', 'void main() {\n  float dn = .65 * wn(vObj * 4.) + .35 * wn(vObj * 11.);\n  if (dn < uDissolve) discard;')
-      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n  if (uDissolve > .001 && dn < uDissolve + .05) gl_FragColor.rgb = vec3(.91, .16, .11);');
-  };
-  const headGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_HEAD), { depth: .26, bevelEnabled: true, bevelThickness: .1, bevelSize: .045, bevelSegments: 2, curveSegments: 1 });
-  headGeo.translate(0, 0, -.13);
-  const chestGeo = new THREE.ExtrudeGeometry(toShape(OUTLINE_CHEST), { depth: .16, bevelEnabled: true, bevelThickness: .06, bevelSize: .03, bevelSegments: 1 });
-  chestGeo.translate(0, 0, -.28);
-  const wolf = new THREE.Group();
-  wolf.add(new THREE.Mesh(headGeo, mat), new THREE.Mesh(chestGeo, mat));
-
-  // the eye crosshairs and the red ear tag, on the front face
-  const P = (x, y) => new THREE.Vector3((x - 300) / 350, (350 - y) / 350, .235);
-  const crossMat = new THREE.LineBasicMaterial({ color: 0x0b0b0b, transparent: true });
-  wolf.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([P(222, 268), P(248, 268), P(235, 255), P(235, 281), P(352, 268), P(378, 268), P(365, 255), P(365, 281)]), crossMat));
-  const tagMat = new THREE.MeshBasicMaterial({ color: 0xe8291c, transparent: true });
-  const tag = new THREE.Mesh(new THREE.BoxGeometry(7 / 350, 18 / 350, .02), tagMat);
-  tag.position.copy(P(439.5, 81));
-  wolf.add(tag);
-  scene.add(wolf);
-
-  const fit = () => {
-    const w = silBox.clientWidth, h = silBox.clientHeight;
-    if (!w || !h) return;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h; camera.updateProjectionMatrix();
-  };
-  fit();
-  new ResizeObserver(fit).observe(silBox);
-  silBox.classList.add('is-3d');
-
-  // a click spins it a full turn; the custom cursor grows over it like over links
-  silBox.addEventListener('click', () => gsap.to(head3d, { spin: head3d.spin + Math.PI * 2, duration: calm ? .6 : 1.6, ease: 'power3.inOut', overwrite: true }));
-  silBox.addEventListener('pointerenter', () => cur.classList.add('big'));
-  silBox.addEventListener('pointerleave', () => cur.classList.remove('big'));
-
-  let onScreen = true, ry = 0, rx = 0;
-  new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; }).observe(prof);
-  renderer.setAnimationLoop((ms) => {
-    if (!onScreen) return;
-    const t = ms / 1000;
-    dissolve.value = calm ? 0 : Math.min(1.02, Math.max(head3d.enter, head3d.exit) * 1.02);
-    const ty = (state.mx - .5) * .6 + (calm ? 0 : Math.sin(t * .4) * .12) + head3d.spin;
-    ry += (ty - ry) * .08;
-    rx += ((state.my - .5) * .25 - rx) * .08;
-    wolf.rotation.set(rx, ry, 0);
-    crossMat.opacity = tagMat.opacity = 1 - smooth01(.12, .45, dissolve.value); // face marks fade before the holes reach them
-    renderer.render(scene, camera);
-  });
-}
-let headStarted = false;
-new IntersectionObserver(([e], io) => {
-  if (!e.isIntersecting || headStarted) return;
-  headStarted = true; io.disconnect();
-  startHead3d().catch(() => { silBox.querySelector('canvas')?.remove(); silBox.classList.remove('is-3d'); });
-}, { rootMargin: '100% 0px' }).observe(prof);
-
-// the flood's top edge is a sum of sines, redrawn only while the profile is on screen
-const waves = $$('.flood path, .profile-edge path'); // the red flood and the white section's top edge
-let waveOn = false;
-function wave(ms) {
-  const t = ms / 1000;
-  waves.forEach((p, k) => {
-    let d = 'M0 100';
-    for (let x = 0; x <= 1000; x += 20) {
-      const y = 55 + Math.sin(x * .011 + t * (1 + k * .3) + k * 2) * 16 + Math.sin(x * .029 - t * 1.4) * 9 + Math.sin(x * .071 + t * 2.2 + k) * 5;
-      d += ` L${x} ${y.toFixed(1)}`;
-    }
-    p.setAttribute('d', `${d} L1000 100 Z`);
-  });
-  if (waveOn && !calm) requestAnimationFrame(wave);
-}
-wave(0);
-new IntersectionObserver(([e]) => {
-  const was = waveOn;
-  waveOn = e.isIntersecting;
-  if (waveOn && !was && !calm) requestAnimationFrame(wave);
-}).observe(prof);
-
 /* ---------- exit (anime.js): headline, watching eye ---------- */
 const { chars } = splitText('#exit h2', { chars: { wrap: 'clip' } });
 if (!calm) animate(chars, {
@@ -1284,7 +882,7 @@ function openGate() {
     animate(gate, { opacity: [0, 1], duration: 250, ease: 'linear' });
     animate(term, { opacity: [0, 1], translateY: [16, 0], scale: [.97, 1], duration: 500, ease: easeOut });
   }
-  const first = !newForm.hidden ? $('#t-newpass') : !$('#t-in').hidden ? $('#t-in a.btn') : mode === 'join' ? $('#t-first') : email;
+  const first = !newForm.hidden ? $('#t-newpass') : !$('#t-in').hidden ? $('#t-out-btn') : mode === 'join' ? $('#t-first') : email;
   first.focus();
 }
 function closeGate() {
@@ -1300,7 +898,6 @@ document.querySelectorAll('[data-open-term]').forEach((a) => a.addEventListener(
 gate.addEventListener('click', (e) => { if (e.target === gate) closeGate(); });
 addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGate(); });
 document.addEventListener('focusin', (e) => { if (!gate.hidden && !gate.contains(e.target)) $('#t-close').focus(); }); // keep Tab inside the panel
-$('#t-in a.btn').addEventListener('click', closeGate);
 
 // 7–15 digits (the international maximum), with the usual separators and an optional leading +
 const validPhone = (p) => /^\+?[\d\s().-]{7,24}$/.test(p) && /^\d{7,15}$/.test(p.replace(/\D/g, ''));
@@ -1473,38 +1070,6 @@ $('#t-out-btn').addEventListener('click', async () => {
   say('SIGNED OUT. THE FILES ARE SEALED AGAIN.');
 });
 
-/* ---------- classified files: read from Supabase, where row level security only answers signed-in members ---------- */
-const locked = $('#cl-locked'), list = $('#cl-list'), msg = $('#cl-msg'), count = $('#cl-count');
-function seal() {
-  list.hidden = true; list.replaceChildren(); locked.hidden = false; count.textContent = 'LOCKED';
-  msg.hidden = false;
-  msg.firstElementChild.textContent = 'THESE FILES OPEN FOR SIGNED-IN MEMBERS.';
-}
-async function declassify() {
-  count.textContent = 'DECRYPTING…';
-  const { data: rows, error } = await sb.from('casefiles').select('no, title, kind, year, note').order('no');
-  if (error) {
-    count.textContent = 'LOCKED';
-    msg.hidden = false;
-    msg.firstElementChild.textContent = ['42P01', 'PGRST205'].includes(error.code)
-      ? "THE CASEFILES TABLE DOESN'T EXIST YET. THE OWNER NEEDS TO RUN SUPABASE.SQL."
-      : `COULD NOT LOAD THE FILES (${error.code ?? 'UNKNOWN'}). REFRESH TO TRY AGAIN.`;
-    return;
-  }
-  list.replaceChildren(...rows.map((r) => {
-    const li = document.createElement('li');
-    const cell = (cls, text) => Object.assign(document.createElement('span'), { className: cls, textContent: text ?? '' });
-    li.append(cell('no', `C${r.no ?? ''}`), cell('name', r.title), cell('what', r.kind), cell('yr', r.year));
-    if (r.note) li.append(cell('note', r.note));
-    return li;
-  }));
-  locked.hidden = true; list.hidden = false;
-  count.textContent = `${String(rows.length).padStart(2, '0')} FILES · DECLASSIFIED`;
-  msg.hidden = rows.length > 0;
-  if (!rows.length) msg.firstElementChild.textContent = 'NO CLASSIFIED FILES YET. THE OWNER ADDS THEM IN SUPABASE.';
-  if (!calm && rows.length) animate([...list.children], { opacity: [0, 1], translateX: [-12, 0], duration: 600, delay: stagger(70), ease: easeOut });
-}
-
 /* ---------- party briefing: fills the side panels (and the phone cards) from the members-only party table ---------- */
 const pad2 = (n) => String(n).padStart(2, '0');
 function dms(v, pos, neg) {
@@ -1596,12 +1161,10 @@ function render(user) {
       animate('.rail .blk > *, .rail .coord', { opacity: [0, 1], duration: 500, delay: stagger(35, { start: hold + 250 }), ease: easeOut });
     }
     loadParty().catch(() => put('title', 'BRIEFING UNAVAILABLE. REFRESH TO TRY AGAIN.'));
-    declassify().catch(() => { count.textContent = 'LOCKED'; });
   } else {
     $('#t-open-label').textContent = 'MEMBER ACCESS';
     clearParty();
     $('#briefing').replaceChildren();
-    seal();
   }
 }
 
