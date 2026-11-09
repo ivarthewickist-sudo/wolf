@@ -35,7 +35,7 @@ const VERT = `
         // reddish glow: hue wobbles between crimson and ember orange
         float hue = fract(0.985 + 0.045 * sin(uTime * 1.7 + d * 45.0 + seed * 6.283));
         vec3 hot = hsv(hue) * vec3(1.5, 0.75, 0.7) + vec3(0.18, 0.02, 0.03);
-        vCol = mix(base, hot, g);
+        vCol = mix(base, hot, w); // red only for the click shockwave; hover keeps its effect without colour
         vGlow = g;
         vSeed = seed;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
