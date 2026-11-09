@@ -12,7 +12,7 @@ const VERT = `
       attribute float seed;
       uniform float uTime, uSize, uScale, uHover, uRadius, uForce, uUseTex, uClickT;
       uniform vec3 uRayO, uRayD, uColor, uClick;
-      varying vec3 vCol; varying float vGlow;
+      varying vec3 vCol; varying float vGlow; varying float vSeed;
       vec3 hsv(float h){ return clamp(abs(mod(h*6.+vec3(0,4,2),6.)-3.)-1.,0.,1.); }
       void main(){
         vec3 p = position;
@@ -37,17 +37,28 @@ const VERT = `
         vec3 hot = hsv(hue) * vec3(1.5, 0.75, 0.7) + vec3(0.18, 0.02, 0.03);
         vCol = mix(base, hot, g);
         vGlow = g;
+        vSeed = seed;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_PointSize = uSize * uScale / -mv.z * (1.0 + 2.2 * g * (0.6 + 0.4 * sin(uTime * 10.0 + seed * 40.0)));
         gl_Position = projectionMatrix * mv;
       }`;
 const FRAG = `
-      varying vec3 vCol; varying float vGlow;
+      uniform sampler2D uAtlas; uniform float uAscii, uGlyphs;
+      varying vec3 vCol; varying float vGlow; varying float vSeed;
       void main(){
-        float r = length(gl_PointCoord - 0.5);
-        if (r > 0.5) discard;
-        float a = mix(1.0, smoothstep(0.5, 0.0, r), vGlow);
-        gl_FragColor = vec4(vCol, a);
+        vec2 uv = gl_PointCoord;
+        if (uAscii > 0.5) {
+          // ASCII: this point shows one glyph from the sprite sheet, picked by its seed
+          float gi = floor(vSeed * uGlyphs);
+          float m = texture2D(uAtlas, vec2((gi + uv.x) / uGlyphs, 1.0 - uv.y)).a;
+          if (m < 0.2) discard;
+          gl_FragColor = vec4(vCol, m);
+        } else {
+          float r = length(uv - 0.5);
+          if (r > 0.5) discard;
+          float a = mix(1.0, smoothstep(0.5, 0.0, r), vGlow);
+          gl_FragColor = vec4(vCol, a);
+        }
         #include <colorspace_fragment>
       }`;
 
@@ -56,6 +67,7 @@ export function mountMask(container, opts = {}) {
     pcdUrl: './venice_mask_rgb.pcd',
     size: 0.00343, radius: 0.07705, force: 0.816,
     textureColors: true, color: '#ffffff',
+    ascii: false, glyphs: '01<>/\\#%_=+X', // ascii: draw each point as a character from `glyphs`
     background: null,          // null = transparent, or e.g. '#000000'
     autoRotate: false, controls: true, cameraZ: 1.4
   }, opts);
@@ -81,6 +93,15 @@ export function mountMask(container, opts = {}) {
   const rayO = new THREE.Vector3(), rayD = new THREE.Vector3(0, 0, -1);
   let points, material, hover = 0, hoverTarget = 0;
 
+  // sprite sheet for ASCII mode: one glyph per cell, white on transparent
+  const glyphs = [...o.glyphs], cell = 64, atlasCv = document.createElement('canvas');
+  atlasCv.width = cell * glyphs.length; atlasCv.height = cell;
+  const actx = atlasCv.getContext('2d');
+  actx.fillStyle = '#ffffff'; actx.font = `bold ${cell * 0.8}px ui-monospace, Consolas, monospace`;
+  actx.textAlign = 'center'; actx.textBaseline = 'middle';
+  glyphs.forEach((ch, i) => actx.fillText(ch, i * cell + cell / 2, cell / 2 + cell * 0.03));
+  const atlas = new THREE.CanvasTexture(atlasCv);
+
   new PCDLoader().load(o.pcdUrl, (pts) => {
     points = pts;
     points.geometry.center();
@@ -96,7 +117,8 @@ export function mountMask(container, opts = {}) {
         uRayO: { value: rayO }, uRayD: { value: rayD }, uHover: { value: 0 },
         uRadius: { value: o.radius }, uForce: { value: o.force },
         uUseTex: { value: o.textureColors ? 1 : 0 }, uColor: { value: new THREE.Color(o.color) },
-        uClick: { value: new THREE.Vector3() }, uClickT: { value: -10 }
+        uClick: { value: new THREE.Vector3() }, uClickT: { value: -10 },
+        uAtlas: { value: atlas }, uAscii: { value: o.ascii ? 1 : 0 }, uGlyphs: { value: glyphs.length }
       }
     });
     points.material = material;
