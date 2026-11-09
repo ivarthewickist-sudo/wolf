@@ -101,6 +101,7 @@ export function mountMask(container, opts = {}) {
   actx.textAlign = 'center'; actx.textBaseline = 'middle';
   glyphs.forEach((ch, i) => actx.fillText(ch, i * cell + cell / 2, cell / 2 + cell * 0.03));
   const atlas = new THREE.CanvasTexture(atlasCv);
+  atlas.generateMipmaps = false; atlas.minFilter = THREE.LinearFilter; // no mipmaps: the sprite sheet isn't power-of-two
 
   new PCDLoader().load(o.pcdUrl, (pts) => {
     points = pts;
