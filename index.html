@@ -312,6 +312,7 @@ main { position: relative; z-index: 2; }
 }
 /* the flat SVG head is the fallback; the Venice point cloud (canvas) is mounted into the same box */
 .sil > svg, .sil > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.sil.is-3d > svg { display: none; }
 .sil .body { fill: var(--paper); }
 .sil .x { stroke: var(--soot); stroke-width: 2; fill: none; }
 .sil .dot { fill: var(--blood); }
@@ -1067,7 +1068,10 @@ createTimeline({
 const silBox = $('.sil');
 // the Venice mask point cloud (mask-pointcloud.js); if the module or WebGL fails, the flat SVG head stays
 import('./mask-pointcloud.js')
-  .then(({ mountMask }) => mountMask(silBox, { pcdUrl: 'assets/venice_mask_rgb.pcd', background: '#000000' }))
+  .then(({ mountMask }) => {
+    mountMask(silBox, { pcdUrl: 'assets/venice_mask_rgb.pcd', background: null, textureColors: false, color: '#ffffff', autoRotate: true, cameraZ: 1.1 });
+    silBox.classList.add('is-3d'); // hides the flat SVG head behind the mask
+  })
   .catch((e) => console.warn('mask off:', e));
 
 // the flood's top edge is a sum of sines, redrawn only while the profile is on screen
