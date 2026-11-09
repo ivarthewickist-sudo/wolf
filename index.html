@@ -1069,7 +1069,7 @@ const silBox = $('.sil');
 // the Venice mask point cloud (mask-pointcloud.js); if the module or WebGL fails, the flat SVG head stays
 import('./mask-pointcloud.js')
   .then(({ mountMask }) => {
-    mountMask(silBox, { pcdUrl: 'assets/venice_mask_rgb.pcd', background: null, textureColors: false, color: '#ffffff', autoRotate: true, cameraZ: 0.85, size: 0.0085, ascii: true });
+    mountMask(silBox, { pcdUrl: 'assets/venice_mask_rgb.pcd', background: null, textureColors: false, color: '#ffffff', autoRotate: true, cameraZ: 0.85, size: 0.017, ascii: true });
     silBox.classList.add('is-3d'); // hides the flat SVG head behind the mask
   })
   .catch((e) => console.warn('mask off:', e));
