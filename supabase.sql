@@ -176,3 +176,39 @@ select 'FULL MOON · NIGHT 07', '2026-11-28 23:00:00+01', '2026-11-29 06:00:00+0
   array['BLACK FROM COLLAR TO BOOTS', 'ONE RED DETAIL ALLOWED', 'MASKS WELCOME, NOT REQUIRED', 'SHOES YOU CAN DANCE IN TILL SIX'],
   array['NO PHOTOS OR VIDEO ON THE FLOOR', 'PHONES STAY IN POCKETS', 'ASK FIRST. NO MEANS NO', 'NO PLUS-ONES WITHOUT CLEARANCE', 'WHAT HAPPENS IN THE DEN STAYS THERE', 'LOOK AFTER THE PACK']
 where not exists (select 1 from public.party);
+
+
+-- Request log: every join, sign-in and password-reset request from the site is saved here for the owner.
+-- Read it in Supabase → Table Editor → requests (newest first). The site can write rows but never read them.
+-- Passwords are never sent. Kinds the site doesn't send yet (contact, access) are accepted for later forms.
+create table if not exists public.requests (
+  id bigint generated always as identity primary key,
+  kind text not null check (kind in ('join', 'signin', 'reset', 'contact', 'access')),
+  outcome text not null,
+  email text,
+  first_name text,
+  last_name text,
+  phone text,
+  invite text,
+  detail text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists requests_created_idx on public.requests (created_at desc);
+alter table public.requests enable row level security; -- no policies: visitors can't read the log
+
+-- The only way in from the site. Runs as its owner so it can insert past the row level security;
+-- unknown kinds are dropped, and every text field is capped in length.
+-- shortcut: no per-visitor rate limit (the site can't see IPs here), so a determined spammer can fill the table; delete rows in Table Editor, or add a limit when it matters.
+create or replace function public.save_request(
+  kind text, outcome text, email text default null, first_name text default null, last_name text default null,
+  phone text default null, invite text default null, detail text default null
+) returns void language plpgsql security definer set search_path = '' as $$
+begin
+  if kind not in ('join', 'signin', 'reset', 'contact', 'access') then return; end if;
+  insert into public.requests (kind, outcome, email, first_name, last_name, phone, invite, detail)
+  values (kind, left(outcome, 40), left(email, 254), left(first_name, 60), left(last_name, 60),
+          left(phone, 24), left(invite, 40), left(detail, 200));
+end $$;
+
+grant execute on function public.save_request(text, text, text, text, text, text, text, text) to anon, authenticated;

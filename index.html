@@ -270,15 +270,6 @@ main { position: relative; z-index: 2; }
 .cases .yr { text-align: right; }
 .cases li:hover { background: var(--blood); color: var(--void); }
 
-/* classified: members-only case files, redacted until signed in */
-#classified { padding-block: 0 22vh; }
-.redacted li { cursor: default; }
-.redacted li:hover { background: none; color: inherit; }
-.bars { display: flex; gap: 10px; flex-wrap: wrap; }
-.bars i { display: block; height: clamp(22px, 3.4vw, 44px); background: var(--ink); opacity: .85; }
-.unlock { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 10px; font-size: 9.5px; color: var(--dim); }
-.unlock a { color: var(--blood); }
-.cl .note { grid-column: 2 / -1; color: var(--dim); font-size: 9.5px; line-height: 1.6; text-transform: none; }
 
 /* profile: pinned white specimen sheet */
 #profile { position: relative; z-index: 2; height: 360vh; }
@@ -599,16 +590,6 @@ body.is-red .crt { opacity: .6; animation: none; }
     </ol>
   </section>
 
-  <section id="classified">
-    <div class="sec-head"><span>CLASSIFIED · PACK MEMBERS ONLY</span><span class="d" id="cl-count">LOCKED</span></div>
-    <ol class="cases redacted" id="cl-locked" aria-label="Locked files">
-      <li><span class="no">C1</span><span class="bars"><i style="width: 38%"></i><i style="width: 22%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
-      <li><span class="no">C2</span><span class="bars"><i style="width: 54%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
-      <li><span class="no">C3</span><span class="bars"><i style="width: 26%"></i><i style="width: 31%"></i></span><span class="what">REDACTED</span><span class="yr">····</span></li>
-    </ol>
-    <ol class="cases cl" id="cl-list" hidden></ol>
-    <div class="unlock" id="cl-msg"><span>THESE FILES OPEN FOR SIGNED-IN MEMBERS.</span><a href="#index" data-open-term>SIGN IN TO DECLASSIFY +</a></div>
-  </section>
 </main>
 
 <section id="profile" aria-label="Subject profile">
@@ -708,7 +689,7 @@ body.is-red .crt { opacity: .6; animation: none; }
     <div id="t-in" hidden>
       <div class="granted">ACCESS GRANTED</div>
       <div class="row" style="margin-block: 10px 12px;"><span class="who" id="t-who"></span><span class="chip">CLEARANCE 07</span></div>
-      <div class="actions"><a class="btn" href="#classified">OPEN CLASSIFIED FILES +</a><button type="button" class="btn ghost" id="t-out-btn">SIGN OUT</button></div>
+      <div class="actions"><button type="button" class="btn ghost" id="t-out-btn">SIGN OUT</button></div>
     </div>
 
     <form id="t-new" hidden novalidate>
@@ -1410,11 +1391,10 @@ function closeGate() {
   gate.hidden = true;
   opener.setAttribute('aria-expanded', 'false');
   document.dispatchEvent(new Event('gate:close'));
-  lastFocus?.focus?.({ preventScroll: true }); // don't yank the page back to the hero after OPEN CLASSIFIED FILES
+  lastFocus?.focus?.({ preventScroll: true }); // don't yank the page back to the hero when the panel closes
 }
 opener.addEventListener('click', openGate);
 $('#t-close').addEventListener('click', closeGate);
-document.querySelectorAll('[data-open-term]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); openGate(); }));
 gate.addEventListener('click', (e) => { if (e.target === gate) closeGate(); });
 addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGate(); });
 document.addEventListener('focusin', (e) => { if (!gate.hidden && !gate.contains(e.target)) $('#t-close').focus(); }); // keep Tab inside the panel
@@ -1486,13 +1466,24 @@ if (invite && /^https?:$/.test(location.protocol)) {
   history.replaceState(null, '', location.pathname + (query.size ? `?${query}` : '') + location.hash);
 }
 const BAD_INVITE = 'THAT INVITE LINK IS INVALID, USED UP OR EXPIRED. ASK FOR A NEW ONE.';
+
+/* ---------- request log: every join, sign-in and reset request is saved to the requests table for the owner ----------
+   Fire and forget: it never slows or blocks the visitor, and a missing table is ignored. Passwords are never sent. */
+function logRequest(kind, outcome, fields = {}) {
+  connect().then((c) => c.rpc('save_request', {
+    kind, outcome,
+    email: fields.email ?? null, first_name: fields.first ?? null, last_name: fields.last ?? null,
+    phone: fields.phone ?? null, invite: fields.invite ?? null, detail: fields.detail ?? null,
+  })).catch(() => {});
+}
+
 async function acceptInvite() {
   openGate();
   say('CHECKING INVITATION…');
   try {
     const { data: ok, error } = await sb.rpc('invite_ok', { c: invite });
     if (error) throw error;
-    if (!ok) { invite = null; setMode('in', true); say(BAD_INVITE, 'err'); shake(); return; }
+    if (!ok) { logRequest('join', 'bad_invite', { invite }); invite = null; setMode('in', true); say(BAD_INVITE, 'err'); shake(); return; }
     $('#t-invite-code').textContent = invite;
     setMode('join');
     $('#t-first').focus();
@@ -1531,6 +1522,7 @@ form.addEventListener('submit', async (e) => {
     const { auth } = await connect();
     if (mode === 'in') {
       const { error } = await auth.signInWithPassword({ email: mail, password: pw });
+      logRequest('signin', error ? 'failed' : 'ok', { email: mail, detail: error?.code });
       if (error) throw error;
       justIn = true; // render() then closes the panel so the briefing can slide in
     } else {
@@ -1539,6 +1531,10 @@ form.addEventListener('submit', async (e) => {
         email: mail, password: pw,
         options: { emailRedirectTo: here(), data: { first_name: first, last_name: last, phone, invite } },
       });
+      // the check_invite trigger refuses a bad code with a generic database error; log that as refused
+      const refusedInvite = !!error && (error.code === 'unexpected_failure' || /database error saving new user/i.test(error.message ?? ''));
+      logRequest('join', error ? (refusedInvite ? 'refused' : 'failed') : 'sent',
+        { email: mail, first, last, phone, invite, detail: error?.code });
       if (error) throw error;
       // with email confirmation on (the Supabase default) there is no session until the link is clicked
       invite = null; // this visitor's invite is spent; the terminal goes back to sign-in only
@@ -1561,6 +1557,7 @@ $('#t-reset').addEventListener('click', async () => {
   try {
     const { auth } = await connect();
     const { error } = await auth.resetPasswordForEmail(mail, { redirectTo: here() });
+    logRequest('reset', error ? 'failed' : 'sent', { email: mail, detail: error?.code });
     if (error) throw error;
     say('IF THAT CALLSIGN EXISTS, A RESET LINK IS ON ITS WAY.', 'ok');
   } catch (err) {
@@ -1591,43 +1588,11 @@ $('#t-out-btn').addEventListener('click', async () => {
     const { auth } = await connect();
     const { error } = await auth.signOut({ scope: 'local' }); // this device only; other sessions stay signed in
     if (error) throw error;
-    say('SIGNED OUT. THE FILES ARE SEALED AGAIN.');
+    say('SIGNED OUT.');
   } catch (err) {
     say(explain(err), 'err');
   }
 });
-
-/* ---------- classified files: read from Supabase, where row level security only answers signed-in members ---------- */
-const locked = $('#cl-locked'), list = $('#cl-list'), msg = $('#cl-msg'), count = $('#cl-count');
-function seal() {
-  list.hidden = true; list.replaceChildren(); locked.hidden = false; count.textContent = 'LOCKED';
-  msg.hidden = false;
-  msg.firstElementChild.textContent = 'THESE FILES OPEN FOR SIGNED-IN MEMBERS.';
-}
-async function declassify() {
-  count.textContent = 'DECRYPTING…';
-  const { data: rows, error } = await sb.from('casefiles').select('no, title, kind, year, note').order('no');
-  if (error) {
-    count.textContent = 'LOCKED';
-    msg.hidden = false;
-    msg.firstElementChild.textContent = ['42P01', 'PGRST205'].includes(error.code)
-      ? "THE CASEFILES TABLE DOESN'T EXIST YET. THE OWNER NEEDS TO RUN SUPABASE.SQL."
-      : `COULD NOT LOAD THE FILES (${error.code ?? 'UNKNOWN'}). REFRESH TO TRY AGAIN.`;
-    return;
-  }
-  list.replaceChildren(...rows.map((r) => {
-    const li = document.createElement('li');
-    const cell = (cls, text) => Object.assign(document.createElement('span'), { className: cls, textContent: text ?? '' });
-    li.append(cell('no', `C${r.no ?? ''}`), cell('name', r.title), cell('what', r.kind), cell('yr', r.year));
-    if (r.note) li.append(cell('note', r.note));
-    return li;
-  }));
-  locked.hidden = true; list.hidden = false;
-  count.textContent = `${String(rows.length).padStart(2, '0')} FILES · DECLASSIFIED`;
-  msg.hidden = rows.length > 0;
-  if (!rows.length) msg.firstElementChild.textContent = 'NO CLASSIFIED FILES YET. THE OWNER ADDS THEM IN SUPABASE.';
-  if (!calm && rows.length) animate([...list.children], { opacity: [0, 1], translateX: [-12, 0], duration: 600, delay: stagger(70), ease: easeOut });
-}
 
 /* ---------- party briefing: fills the side panels (and the phone cards) from the members-only party table ---------- */
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -1720,12 +1685,10 @@ function render(user) {
       animate('.rail .blk > *, .rail .coord', { opacity: [0, 1], duration: 500, delay: stagger(35, { start: hold + 250 }), ease: easeOut });
     }
     loadParty().catch(() => put('title', 'BRIEFING UNAVAILABLE. REFRESH TO TRY AGAIN.'));
-    declassify().catch(() => { count.textContent = 'LOCKED'; });
   } else {
     $('#t-open-label').textContent = 'MEMBER ACCESS';
     clearParty();
     $('#briefing').replaceChildren();
-    seal();
   }
 }
 
