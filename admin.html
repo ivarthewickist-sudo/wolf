@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* Same palette and type as the public page. Everything here is enforced by Supabase row level security (supabase.sql); the page only hides what you can't use. */
+/* Same palette and type as the public page. Everything here is enforced by the API (api/index.php); the page only hides what you can't use. */
 :root {
   --void: #020303; --ink: #e6ecee; --ink-on: #020303; --dim: #7a8487; --line: rgba(218, 236, 241, .16);
   --grid: rgba(218, 236, 241, .075); --blood: #e8291c; --field: rgba(255, 255, 255, .03);
@@ -133,7 +133,7 @@ td a { color: var(--ink); }
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Invite</th><th>Joined</th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Invite</th><th>Joined</th><th>Password</th></tr></thead>
         <tbody id="m-rows"></tbody>
       </table>
     </div>
@@ -141,11 +141,20 @@ td a { color: var(--ink); }
 </main>
 
 <script type="module">
-// Same project and public key as index.html; signing in here also signs you in on the site (same browser storage).
-const SUPABASE_URL = 'https://zhnpzbspxtflcitcxoll.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_7sLSmdKPReOkLK7fChAYzQ_EUgIsA5Z';
-const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm');
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Same API and session cookie as index.html; signing in here also signs you in on the site. The server checks is_admin on every call.
+async function api(a, data = {}) {
+  let res;
+  try {
+    res = await fetch('api/index.php', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-Wolf': '1' },
+      body: JSON.stringify({ a, ...data }),
+    });
+  } catch { throw Object.assign(new Error('network'), { code: 'network' }); }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(body.error?.code || 'failed'), { code: body.error?.code || 'failed' });
+  return body;
+}
 
 const $ = (s) => document.querySelector(s);
 const form = $('#party'), pick = $('#pick'), pStatus = $('#p-status');
@@ -214,8 +223,8 @@ function fill(p, notes = '') {
 }
 
 async function loadParties(selectId) {
-  const { data, error } = await sb.from('party').select('*').order('starts_at', { ascending: false });
-  if (error) { say(pStatus, `COULD NOT LOAD PARTIES: ${error.message}`, 'err'); return; }
+  let data;
+  try { ({ parties: data } = await api('party_list')); } catch (error) { say(pStatus, `COULD NOT LOAD PARTIES: ${error.message}`, 'err'); return; }
   parties = data;
   pick.replaceChildren(...parties.map((p) => {
     const d = new Date(p.starts_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -224,10 +233,7 @@ async function loadParties(selectId) {
   const chosen = parties.find((p) => p.id === selectId) ?? parties[0];
   if (chosen) { pick.value = chosen.id; await openParty(chosen); } else fill(null);
 }
-async function openParty(p) {
-  const { data } = await sb.from('party_notes').select('notes').eq('party_id', p.id).maybeSingle();
-  fill(p, data?.notes ?? '');
-}
+const openParty = async (p) => fill(p, p.notes ?? ''); // notes arrive with the admin-only party list
 pick.onchange = () => openParty(parties.find((p) => String(p.id) === pick.value));
 $('#new').onclick = () => { pick.value = ''; fill(null); form.elements.title.focus(); };
 
@@ -244,29 +250,21 @@ form.onsubmit = async (e) => {
     directions: text('directions'), entry: text('entry'), dress_code: text('dress_code'), capacity: cap,
     status: f.status.value || null, published: f.published.checked,
     dress_notes: readList('dress_notes'), rules: readList('rules'),
-    info: null, // old public info line; internal notes now live in party_notes
     ...toRange(f.date.value, f.doors.value, f.ends.value),
   };
   $('#save').disabled = true;
   say(pStatus, 'SAVING…');
-  const q = current ? sb.from('party').update(row).eq('id', current.id) : sb.from('party').insert(row);
-  const { data, error } = await q.select().single();
-  if (!error) {
-    const notes = f.notes.value.trim();
-    const n = notes
-      ? await sb.from('party_notes').upsert({ party_id: data.id, notes })
-      : await sb.from('party_notes').delete().eq('party_id', data.id);
-    await loadParties(data.id); // reloads the form, which clears the status line, so report after
-    if (n.error) say(pStatus, `PARTY SAVED, NOTES FAILED: ${n.error.message}`, 'err');
-    else say(pStatus, row.published ? 'SAVED · LIVE FOR MEMBERS' : 'SAVED · HIDDEN DRAFT', 'ok');
-  } else say(pStatus, `NOT SAVED: ${error.message}`, 'err');
+  try {
+    const { id } = await api('party_save', { id: current?.id, row, notes: f.notes.value.trim() });
+    await loadParties(id); // reloads the form, which clears the status line, so report after
+    say(pStatus, row.published ? 'SAVED · LIVE FOR MEMBERS' : 'SAVED · HIDDEN DRAFT', 'ok');
+  } catch (error) { say(pStatus, `NOT SAVED: ${error.message}`, 'err'); }
   $('#save').disabled = false;
 };
 
 $('#del').onclick = async () => {
   if (!current || !confirm(`Delete “${current.title}” for good? This can't be undone.`)) return;
-  const { error } = await sb.from('party').delete().eq('id', current.id);
-  if (error) { say(pStatus, `NOT DELETED: ${error.message}`, 'err'); return; }
+  try { await api('party_delete', { id: current.id }); } catch (error) { say(pStatus, `NOT DELETED: ${error.message}`, 'err'); return; }
   await loadParties();
   say(pStatus, 'DELETED.', 'ok');
 };
@@ -289,13 +287,22 @@ function showMembers() {
       cell(fullName(m)), cell(m.email, m.email && `mailto:${m.email}`), cell(m.phone, m.phone && `tel:${m.phone.replace(/[^\d+]/g, '')}`),
       cell(m.invite), cell(new Date(m.created_at).toLocaleDateString('en-GB')),
     );
+    // no email sending: a forgotten passphrase is fixed by sending the member a one-time link
+    const reset = Object.assign(document.createElement('button'), { type: 'button', textContent: 'RESET LINK' });
+    reset.onclick = async () => {
+      try {
+        const { token } = await api('admin_reset_link', { user_id: m.id });
+        prompt('One-time reset link, valid for 1 hour. Send it to the member:', new URL('./', location.href).href + '?reset=' + token);
+      } catch (error) { alert(`Could not create the link: ${error.message}`); }
+    };
+    const rtd = document.createElement('td');
+    rtd.append(reset);
+    tr.append(rtd);
     return tr;
   }));
 }
 async function loadMembers() {
-  const { data, error } = await sb.from('members').select('*').order('created_at', { ascending: false });
-  if (error) { $('#m-count').textContent = `COULD NOT LOAD: ${error.message}`; return; }
-  members = data;
+  try { ({ members } = await api('members_list')); } catch (error) { $('#m-count').textContent = `COULD NOT LOAD: ${error.message}`; return; }
   showMembers();
 }
 $('#m-search').oninput = showMembers;
@@ -320,11 +327,16 @@ $('#csv').onclick = () => {
 $('#login').onsubmit = async (e) => {
   e.preventDefault();
   const btn = e.submitter; btn.disabled = true;
-  const { error } = await sb.auth.signInWithPassword({ email: $('#l-email').value.trim(), password: $('#l-pass').value });
+  try {
+    const { user } = await api('login', { email: $('#l-email').value.trim(), password: $('#l-pass').value });
+    $('#l-pass').value = '';
+    await render(user);
+  } catch (error) {
+    alert({ invalid_credentials: 'Wrong email or password.', over_request_rate_limit: 'Too many tries. Wait a few minutes.' }[error.code] ?? `Sign-in failed (${error.message}).`);
+  }
   btn.disabled = false;
-  if (error) alert(error.message);
 };
-$('#out').onclick = () => sb.auth.signOut();
+$('#out').onclick = async () => { await api('logout').catch(() => {}); render(null); };
 
 async function render(user) {
   $('#out').hidden = !user;
@@ -332,23 +344,11 @@ async function render(user) {
   $('#login').hidden = !!user;
   $('#app').hidden = true;
   if (!user) return;
-  const { data: ok, error } = await sb.rpc('is_admin');
-  if (error || !ok) {
-    $('#who').textContent = error?.code === 'PGRST202'
-      ? 'ADMIN SQL NOT RUN YET · RUN THE ADMIN SECTION OF SUPABASE.SQL'
-      : `${user.email} · NOT AN ADMIN`;
-    return;
-  }
+  if (!user.is_admin) { $('#who').textContent = `${user.email} · NOT AN ADMIN`; return; }
   $('#app').hidden = false;
   await Promise.all([loadParties(), loadMembers()]);
 }
-let last;
-sb.auth.onAuthStateChange((_e, session) => {
-  const id = session?.user?.id ?? null;
-  if (id === last) return; // token refreshes shouldn't wipe a half-edited form
-  last = id;
-  setTimeout(() => render(session?.user ?? null), 0);
-});
+api('me').then(({ user }) => render(user)).catch(() => { $('#who').textContent = 'NO SIGNAL FROM THE SERVER'; });
 </script>
 </body>
 </html>

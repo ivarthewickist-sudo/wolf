@@ -1,0 +1,8 @@
+# config.php holds the database login; it is PHP (prints nothing) but never serve it anyway
+<Files "config.php">
+  Require all denied
+</Files>
+<Files "schema.sql">
+  Require all denied
+</Files>
+Options -Indexes

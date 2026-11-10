@@ -1,0 +1,5 @@
+
+# local secrets and build output
+api/config.php
+hostinger-upload.zip
+.claude/
