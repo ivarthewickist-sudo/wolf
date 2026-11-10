@@ -14,8 +14,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Doto:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: fixed HUD rails left and right, a thermal wolf pinned dead centre, the case file scrolling in two columns around it,
-   then a red exit. A command bar runs along the bottom throughout. */
+/* Layout: fixed HUD rails left and right, a thermal wolf pinned dead centre, the case file scrolling in two columns around it.
+   A command bar runs along the bottom throughout. */
 :root {
   --void: #020303;
   --ink: #e6ecee;
@@ -24,6 +24,8 @@
   --line: rgba(218, 236, 241, .14);
   --grid: rgba(218, 236, 241, .075);
   --blood: #e8291c;
+  --neon: #ff2d6f;   /* the magenta of the dancing clip */
+  --neon-deep: #8c0f3f;
   --paper: #ffffff;
   --bar-bg: #161819;
   --chalk: #e9eae7;
@@ -64,12 +66,11 @@ a { color: inherit; text-decoration: none; }
 #boot {
   position: fixed; inset: 0; z-index: 10;
   display: grid; place-items: center; align-content: center; gap: 22px;
-  background: var(--blood); color: var(--paper);
+  background: #000; color: var(--paper);
   font-size: 8.5px; text-align: center; line-height: 1.5;
   animation: bootout 0s 6s forwards; /* if the CDN never answers, the page still opens */
 }
-#boot svg { width: 92px; height: auto; overflow: visible; }
-#boot path { fill: none; stroke: var(--paper); stroke-width: 11; stroke-linecap: square; stroke-linejoin: miter; }
+#boot .boot-logo { width: 92px; height: auto; }
 #boot .count { font: 900 13px var(--display); letter-spacing: .12em; }
 #boot .foot { position: absolute; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; }
 @keyframes bootout { to { visibility: hidden; } }
@@ -270,54 +271,20 @@ main { position: relative; z-index: 2; }
 .brand-tag::before { content: "\25CF  "; color: var(--blood); }
 
 
-/* exit: red footer */
-#exit {
-  position: relative; z-index: 2;
-  background: var(--blood) radial-gradient(rgba(0, 0, 0, .13) .7px, transparent 1px) 0 0 / 4px 4px;
-  color: var(--soot);
-  padding-block: 9vh calc(var(--bar) + env(safe-area-inset-bottom, 0px) + 20px);
-  display: grid; gap: 28px;
-}
-#exit h2 { margin: 0; text-align: center; font: 700 clamp(44px, 9vw, 150px)/.9 var(--text); letter-spacing: -.01em; text-wrap: balance; }
-.eyeband { position: relative; height: clamp(150px, 30vh, 320px); background: var(--soot); color: var(--blood); font-size: 9.5px; }
-.eyeband svg { position: absolute; left: 1.5%; top: 14%; width: 97%; height: 72%; }
-#eye { transform-box: fill-box; transform-origin: center; }
-.eyeband .lbl { position: absolute; display: flex; gap: 14px; }
-.eyeband .lbl.tl { top: 8px; left: 12px; }
-.eyeband .lbl.br { bottom: 8px; right: 12px; }
-.eyeband .lbl a::after { content: " +"; }
-.eyeband .lbl .chip { background: var(--blood); color: var(--soot); }
-.exit-grid {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px;
-  padding-top: 14px; border-top: 1px solid rgba(0, 0, 0, .35);
-  font-size: 9.5px; line-height: 1.6;
-}
-.exit-grid h3 { margin: 0 0 8px; font: 700 9.5px var(--mono); letter-spacing: .08em; }
-.exit-grid ol { margin: 0; padding: 0; list-style: none; }
-.exit-grid li::before { content: counter(list-item) ". "; font-family: var(--mono); }
-.mail { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.mail code { font: 700 11px/2 var(--mono); padding: 0 8px; border: 1px solid rgba(0, 0, 0, .4); text-transform: none; overflow-wrap: anywhere; }
-button { font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
-.btn { background: var(--ink); color: var(--ink-on); border: 0; padding: 0 10px; line-height: 2.2; font-weight: 700; }
-.btn:hover { background: var(--blood); color: var(--paper); }
-#exit .btn { background: var(--soot); color: var(--blood); }
-#exit .btn:hover { background: var(--paper); color: var(--soot); }
-.exit-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 9px; padding-top: 10px; border-top: 1px solid rgba(0, 0, 0, .35); }
-
 /* command bar */
 .bar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
   min-height: calc(var(--bar) + env(safe-area-inset-bottom, 0px));
   padding: 0 max(10px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(10px, env(safe-area-inset-left, 0px));
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  background: var(--bar-bg); border-top: 1px solid var(--line);
+  background: rgba(2, 3, 3, .14); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); /* see-through, so the page shows through the footer */
+  border-top: 1px solid var(--line);
   font-size: 10.5px;
   transition: background .2s steps(2);
 }
-.bar nav { display: flex; gap: 18px; }
-.bar nav a { color: var(--dim); }
-.bar nav a::after { content: " +"; }
-.bar nav a.on, .bar nav a:hover { color: var(--ink); }
+.bar .copy { font: 500 10px var(--mono); color: var(--dim); white-space: nowrap; }
+.bar .phox-link { color: inherit; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(230, 236, 238, .12); text-underline-offset: 3px; }
+.bar .phox-link:hover { color: var(--ink); text-decoration-color: rgba(230, 236, 238, .35); }
 .bar .right { display: flex; align-items: center; gap: 14px; font: 500 10px var(--mono); font-variant-numeric: tabular-nums; }
 .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--blood); margin-right: 6px; vertical-align: 1px; }
 body.is-red .dot { background: var(--ink); }
@@ -352,7 +319,6 @@ body.is-red .crt { opacity: .6; animation: none; }
 
 @media (min-width: 900px) {
   main { margin-inline: calc(var(--rail) + 8px); }
-  .exit-in { padding-left: calc(var(--rail) + 20px); padding-right: calc(var(--rail) + 20px); }
 }
 @media (max-width: 899px) {
   body.member .rail { display: none; }
@@ -367,13 +333,9 @@ body.is-red .crt { opacity: .6; animation: none; }
   .story { grid-template-columns: 1fr; padding-block: 0 24vh; text-align: center; }
   .term { text-align: left; }
   .brand-tag { letter-spacing: .08em; }
-  .bar .clock { display: none; }
-  .bar nav { gap: 12px; }
-  .exit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) {
   .bar .btn { display: none; }
-  .exit-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -384,7 +346,7 @@ body.is-red .crt { opacity: .6; animation: none; }
 <body>
 
 <div id="boot" aria-hidden="true">
-  <svg viewBox="0 0 100 60"><path d="M4 56 L24 6 L44 56 M56 56 L76 6 L96 56"/></svg>
+  <img class="boot-logo" src="assets/boot-loader.gif" alt="">
   <div>LOCATING SUBJECT<br>DO NOT MOVE</div>
   <div class="count">000%</div>
   <div class="foot">ENTER QUIETLY</div>
@@ -396,11 +358,11 @@ body.is-red .crt { opacity: .6; animation: none; }
 <aside class="rail rail-l" aria-label="Dress code and house rules" data-lenis-prevent>
   <div class="blk">
     <div class="tick mark"><svg viewBox="0 0 100 60" aria-hidden="true"><path d="M4 56 L24 6 L44 56 M56 56 L76 6 L96 56"/></svg></div>
-    <div class="row"><span class="chip">DRESS CODE</span><span class="d">PROTOCOL 01</span></div>
+    <div class="row"><span class="chip">DRESS CODE</span></div>
     <div class="code" data-p="dress_code">—</div>
     <ul class="list" data-p="dress_notes"></ul>
   </div>
-  <div class="row coord"><span class="d">MOON</span><span id="moon">0.00 —</span></div>
+  <div class="row coord" data-row="theme" hidden><span class="d">THEME</span><span data-p="theme">—</span></div>
   <div class="blk">
     <div class="row"><span class="chip">HOUSE RULES</span><span class="d"><span data-p="rules_count">00</span> RULES</span></div>
     <ol class="list" data-p="rules"></ol>
@@ -419,10 +381,9 @@ body.is-red .crt { opacity: .6; animation: none; }
       <dt>VENUE</dt><dd><span data-p="venue">—</span></dd>
       <dt>ADDRESS</dt><dd><span data-p="address">—</span></dd>
       <dt>CITY</dt><dd><span data-p="city">—</span></dd>
+      <dt>ACCESS</dt><dd><span data-p="directions">—</span></dd>
     </dl>
-    <div class="d" data-p="info"></div>
   </div>
-  <div class="row coord"><span data-p="lat">—</span><span data-p="lon">—</span></div>
   <div class="blk">
     <div class="countdown"><span class="d">T-MINUS</span><b data-p="countdown">--D --H --M</b></div>
     <div class="row"><span>ENTRY</span><span data-p="entry">—</span></div>
@@ -439,8 +400,8 @@ body.is-red .crt { opacity: .6; animation: none; }
       </button>
     </div>
     <div class="briefing" id="briefing" aria-label="Party briefing"></div>
-    <h1>CASE FILE 07 · THE ONE THAT KEPT WATCHING</h1>
-    <div class="stamp" aria-hidden="true"><span>CASE FILE 07</span><b>CLOSED</b><span>CONTINUE TO INDEX ↓</span></div>
+    <h1>IT'S ALL ABOUT THE MUSIC</h1>
+    <div class="stamp" aria-hidden="true"><span>YOU DON'T PICK THE PARTY</span><b>THE PARTY</b><span>THE PARTY PICKS YOU ↓</span></div>
   </section>
 
   <section id="work">
@@ -456,47 +417,9 @@ body.is-red .crt { opacity: .6; animation: none; }
 
 </main>
 
-<section id="exit" aria-label="Contact">
-  <div class="exit-in gut" style="display: grid; gap: 28px;">
-    <h2>LEAVE BEFORE<br>IT SEES YOU</h2>
-    <div class="eyeband" id="eyeband">
-      <svg viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
-        <defs><clipPath id="eyeclip"><path d="M20 100 Q500 -70 980 100 Q500 270 20 100 Z"/></clipPath></defs>
-        <g id="eye">
-          <path d="M20 100 Q500 -70 980 100 Q500 270 20 100 Z" fill="var(--blood)"/>
-          <g clip-path="url(#eyeclip)">
-            <g id="pupil">
-              <circle cx="500" cy="100" r="88" fill="#b3170d"/>
-              <circle cx="500" cy="100" r="88" fill="none" stroke="#0b0b0b" stroke-opacity=".35" stroke-width="2" stroke-dasharray="3 5"/>
-              <circle cx="500" cy="100" r="44" fill="#0b0b0b"/>
-              <rect x="512" y="72" width="10" height="10" fill="#ffffff"/>
-            </g>
-          </g>
-        </g>
-      </svg>
-      <nav class="lbl tl" aria-label="Sections"><a href="#index">INDEX</a><a href="#work">WORK</a></nav>
-      <div class="lbl br"><span>TAPETUM LUCIDUM</span><span class="chip">OBSERVING</span></div>
-    </div>
-    <div class="exit-grid">
-      <div><h3>01 · SUBJECT</h3>ART DIRECTION<br>MOTION IDENTITY<br>CREATIVE CODE<br>IMAGE</div>
-      <div><h3>02 · SIGNAL</h3><div class="mail"><code id="mail">howl@yourdomain.com</code><button class="btn" id="copy" type="button">COPY +</button></div></div>
-      <div><h3>03 · ROUTES</h3><ol><li><a href="#index">INDEX</a></li><li><a href="#work">WORK</a></li></ol></div>
-      <div><h3>04 · STATUS</h3>AVAILABLE FOR NIGHT SHIFTS<br>REMOTE · ANY TIME ZONE</div>
-    </div>
-    <div class="exit-foot"><span>© 2026 WOLFRITUAL · ALL TERRITORY RESERVED</span><a href="#index">BACK TO THE DARK ↑</a></div>
-  </div>
-</section>
-
 <footer class="bar">
-  <nav aria-label="Sections">
-    <a href="#index" class="on">INDEX</a>
-    <a href="#work">WORK</a>
-    <a href="#exit">EXIT</a>
-  </nav>
-  <div class="right">
-    <span class="clock"><span id="tz">GMT+0</span> &nbsp; <span class="dot blink"></span><span id="clock">00:00:00</span></span>
-    <a class="btn" href="#exit">DON'T CALL ME +</a>
-  </div>
+  <span class="copy">© 2026 COPYRIGHT BY <span class="phox-link">PHOX WEB</span></span>
+  <div class="right"><a href="tel:+213542894404">+213 542 89 44 04</a></div>
 </footer>
 
 <!-- member access: the terminal opens over the page from the MEMBER ACCESS button -->
@@ -522,7 +445,7 @@ body.is-red .crt { opacity: .6; animation: none; }
 
     <div id="t-in" hidden>
       <div class="granted">ACCESS GRANTED</div>
-      <div class="row" style="margin-block: 10px 12px;"><span class="who" id="t-who"></span><span class="chip">CLEARANCE 07</span></div>
+      <div class="row" style="margin-block: 10px 12px;"><span class="who" id="t-who"></span><span class="chip">+213 542 89 44 04</span></div>
       <div class="actions"><button type="button" class="btn ghost" id="t-out-btn">SIGN OUT</button></div>
     </div>
 
@@ -551,7 +474,7 @@ body.is-red .crt { opacity: .6; animation: none; }
 <script type="module">
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger.js';
-import { animate, createTimeline, onScroll, stagger, createAnimatable, splitText, cubicBezier, utils } from 'animejs';
+import { animate, createTimeline, stagger, cubicBezier } from 'animejs';
 import Lenis from 'lenis';
 gsap.registerPlugin(ScrollTrigger);
 
@@ -707,7 +630,7 @@ addEventListener('pointermove', (e) => {
   state.mx = e.clientX / innerWidth; state.my = e.clientY / innerHeight;
   curL.textContent = `X ${pad(e.clientX)} · Y ${pad(e.clientY)}`;
 });
-$$('a, button, .eyeband').forEach((el) => {
+$$('a, button').forEach((el) => {
   el.addEventListener('pointerenter', () => cur.classList.add('big'));
   el.addEventListener('pointerleave', () => cur.classList.remove('big'));
 });
@@ -782,69 +705,22 @@ if (!calm) {
     .fromTo(bn, { '--redact': 1 }, { '--redact': 0, ease: 'power2.inOut' }, 0)
     .fromTo('.brand-tag', { opacity: 0, y: 12 }, { opacity: 1, y: 0, ease: 'none' }, .35);
 }
-const navLinks = $$('.bar nav a');
-navLinks.forEach((a) => {
-  ScrollTrigger.create({
-    trigger: a.getAttribute('href'), start: 'top 50%', end: 'bottom 50%',
-    onToggle: (s) => { if (s.isActive) { navLinks.forEach((x) => x.classList.remove('on')); a.classList.add('on'); } },
-  });
-});
 
-const observers = [];
-const watch = (o) => (observers.push(o), o);
-/* ---------- exit (anime.js): headline, watching eye ---------- */
-const { chars } = splitText('#exit h2', { chars: { wrap: 'clip' } });
-if (!calm) animate(chars, {
-  translateY: ['110%', '0%'], duration: 900, delay: stagger(18), ease: easeOut,
-  autoplay: watch(onScroll({ target: '#exit h2', enter: 'bottom top' })),
-});
-
-const band = $('#eyeband');
-const pupil = createAnimatable('#pupil', { translateX: 700, translateY: 700, ease: 'out(3)' });
-addEventListener('pointermove', (e) => {
-  const r = band.getBoundingClientRect();
-  if (r.bottom < -200 || r.top > innerHeight + 200) return;
-  pupil.translateX(utils.clamp((e.clientX - (r.left + r.width / 2)) / (r.width / 2), -1, 1) * 330);
-  pupil.translateY(utils.clamp((e.clientY - (r.top + r.height / 2)) / (innerHeight / 2), -1, 1) * 34);
-});
-if (!calm) (function blink() {
-  animate('#eye', { scaleY: [1, .04, 1], duration: 260, ease: 'inOut(2)' });
-  setTimeout(blink, utils.random(2600, 6200));
-})();
-
-// webfonts shift the layout; an observer without a target yet measures itself when it links up
-document.fonts.ready.then(() => { ScrollTrigger.refresh(); observers.forEach((o) => o.target && o.refresh()); });
-
-/* ---------- HUD details ---------- */
-// moon illumination from the synodic month, counted from the new moon of 6 Jan 2000 18:14 UTC
-function moon(date) {
-  const syn = 29.530588853, d = (date - Date.UTC(2000, 0, 6, 18, 14)) / 864e5, ph = (((d % syn) + syn) % syn) / syn;
-  return { illum: (1 - Math.cos(2 * Math.PI * ph)) / 2, waxing: ph < .5 };
-}
-console.assert(moon(new Date('2024-01-25T17:54Z')).illum > .98, 'moon: known full moon should be ~1');
-console.assert(moon(new Date('2024-01-11T11:57Z')).illum < .02, 'moon: known new moon should be ~0');
-const m = moon(new Date());
-$('#moon').textContent = `${m.illum.toFixed(2)} ${m.waxing ? 'WAXING' : 'WANING'}`;
-
-const off = -new Date().getTimezoneOffset() / 60;
-$('#tz').textContent = `GMT${off >= 0 ? '+' : '-'}${Math.abs(off)}`;
-const tick = () => { $('#clock').textContent = new Date().toTimeString().slice(0, 8); };
-tick(); setInterval(tick, 1000);
+// webfonts shift the layout, so re-measure the scroll triggers once they load
+document.fonts.ready.then(() => ScrollTrigger.refresh());
 
 
-$('#copy').addEventListener('click', async (e) => {
-  const btn = e.currentTarget;
-  try { await navigator.clipboard.writeText($('#mail').textContent); btn.textContent = 'COPIED +'; }
-  catch { getSelection().selectAllChildren($('#mail')); btn.textContent = 'SELECTED · CTRL+C'; }
-});
+
 
 /* ---------- boot sequence ---------- */
 const boot = $('#boot');
 boot.style.animation = 'none';
-const n = { v: 0 }, count = $('#boot .count'), mark = $('#boot path'), len = mark.getTotalLength();
-gsap.set(mark, { strokeDasharray: len, strokeDashoffset: len });
+const n = { v: 0 }, count = $('#boot .count'), mark = $('#boot .boot-logo');
+gsap.set(mark, { opacity: 0 });
+// the GIF loops forever by default: after one pass (9 frames, 1.26 s) it stops on its final frame, saved as a still
+setTimeout(() => { mark.src = 'assets/boot-loader-final.png'; }, 1260);
 gsap.timeline({ defaults: { ease: 'none' } })
-  .to(mark, { strokeDashoffset: 0, duration: calm ? .2 : 1.4, ease: 'power2.inOut' }, 0)
+  .to(mark, { opacity: 1, duration: calm ? .2 : 1.4, ease: 'power2.inOut' }, 0)
   .to(n, { v: 100, duration: calm ? .2 : 1.6, ease: 'power1.in', onUpdate: () => { count.textContent = `${pad(n.v, 3)}%`; } }, 0)
   .to(boot, { opacity: 0, duration: .05, repeat: calm ? 0 : 3, yoyo: true })
   .to(boot, { clipPath: 'inset(0 0 100% 0)', duration: calm ? .2 : .55, ease: 'power3.in' }) // exits leave fast
@@ -859,8 +735,8 @@ import { animate, stagger, cubicBezier } from 'animejs';
 
 // Paste from Supabase → Project Settings → API keys: the project URL and the anon (or publishable) key.
 // Both are public by design; access is enforced by Supabase Auth and the row level security in supabase.sql.
-const SUPABASE_URL = 'https://orzjyhrsoqdtslufafvn.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_x1chbdpP0KyIiJnS7TYc9w_BnHab8xF';
+const SUPABASE_URL = 'https://zhnpzbspxtflcitcxoll.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_7sLSmdKPReOkLK7fChAYzQ_EUgIsA5Z';
 const SDK = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm';
 
 const $ = (s) => document.querySelector(s);
@@ -1072,17 +948,12 @@ $('#t-out-btn').addEventListener('click', async () => {
 
 /* ---------- party briefing: fills the side panels (and the phone cards) from the members-only party table ---------- */
 const pad2 = (n) => String(n).padStart(2, '0');
-function dms(v, pos, neg) {
-  const t = Math.round(Math.abs(v) * 3600);
-  return `${Math.floor(t / 3600)}°${pad2(Math.floor(t % 3600 / 60))}'${pad2(t % 60)}"${v >= 0 ? pos : neg}`;
-}
 function countdown(start, end, now = Date.now()) {
   if (now >= end) return 'ENDED';
   if (now >= start) return 'NOW LIVE';
   const m = Math.floor((start - now) / 60000);
   return `${pad2(Math.floor(m / 1440))}D ${pad2(Math.floor(m % 1440 / 60))}H ${pad2(m % 60)}M`;
 }
-console.assert(dms(64.1475, 'N', 'S') === `64°08'51"N` && dms(-21.9425, 'E', 'W') === `21°56'33"W`, 'dms format');
 console.assert(countdown(Date.UTC(2026, 0, 2, 3, 4), Date.UTC(2026, 0, 3), Date.UTC(2026, 0, 1)) === '01D 03H 04M', 'countdown');
 
 // English to match the site copy; times still show in the viewer's own time zone
@@ -1095,8 +966,9 @@ let partyTimer = 0;
 
 function clearParty() {
   clearInterval(partyTimer);
-  ['title', 'date', 'doors', 'ends', 'venue', 'address', 'city', 'lat', 'lon', 'entry', 'capacity', 'dress_code'].forEach((k) => put(k, '—'));
-  put('info', ''); put('countdown', '--D --H --M'); put('rules_count', '00'); put('state', '●');
+  ['title', 'date', 'doors', 'ends', 'venue', 'address', 'city', 'directions', 'theme', 'entry', 'capacity', 'dress_code'].forEach((k) => put(k, '—'));
+  document.querySelectorAll('[data-row="theme"]').forEach((r) => { r.hidden = true; });
+  put('countdown', '--D --H --M'); put('rules_count', '00'); put('state', '●');
   putList('dress_notes', []); putList('rules', []);
   slots('maps').forEach((a) => { a.hidden = true; a.removeAttribute('href'); });
 }
@@ -1119,19 +991,22 @@ async function loadParty() {
 
   const start = new Date(p.starts_at), end = p.ends_at ? new Date(p.ends_at) : new Date(start.getTime() + 8 * 36e5);
   put('title', p.title); put('date', day(start)); put('doors', clock(start)); put('ends', `${day(end)} · ${clock(end)}`);
-  put('venue', p.venue); put('address', p.address); put('city', p.city); put('info', p.info ?? '');
+  put('venue', p.venue); put('address', p.address); put('city', p.city); put('directions', p.directions);
+  put('theme', p.theme);
+  document.querySelectorAll('[data-row="theme"]').forEach((r) => { r.hidden = !p.theme; });
   put('entry', p.entry); put('capacity', p.capacity == null ? '—' : String(p.capacity));
   put('dress_code', p.dress_code);
   putList('dress_notes', p.dress_notes ?? []); putList('rules', p.rules ?? []);
   put('rules_count', pad2((p.rules ?? []).length));
-  if (p.lat != null && p.lon != null) {
-    put('lat', dms(p.lat, 'N', 'S')); put('lon', dms(p.lon, 'E', 'W'));
-    slots('maps').forEach((a) => { a.hidden = false; a.href = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`; });
-  }
+  // maps search by the typed address (no coordinates to enter); older rows may still only have lat/lon
+  const where = [p.address, p.city].filter(Boolean).join(', ') || (p.lat != null && p.lon != null ? `${p.lat},${p.lon}` : '');
+  if (where) slots('maps').forEach((a) => { a.hidden = false; a.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(where)}`; });
+  // the admin can override the time-based state with SOLD OUT or CANCELLED
+  const forced = { sold_out: '● SOLD OUT', cancelled: '○ CANCELLED' }[p.status];
   const tick = () => {
-    const c = countdown(start, end);
+    const c = p.status === 'cancelled' ? 'CANCELLED' : countdown(start, end);
     put('countdown', c);
-    put('state', c === 'NOW LIVE' ? '● LIVE' : c === 'ENDED' ? '○ ENDED' : '● UPCOMING');
+    put('state', forced ?? (c === 'NOW LIVE' ? '● LIVE' : c === 'ENDED' ? '○ ENDED' : '● UPCOMING'));
   };
   tick();
   partyTimer = setInterval(tick, 30000);
@@ -1148,7 +1023,9 @@ function render(user) {
   if (user) {
     const name = (user.user_metadata?.first_name ?? '').trim().toUpperCase();
     $('#t-who').textContent = user.email;
-    $('#t-open-label').textContent = name ? `MEMBER · ${name}` : 'MEMBER · CLEARANCE 07';
+    // narrow screens have no side panels to point at, so the button says where the briefing is
+    const narrow = matchMedia('(max-width: 899px)').matches;
+    $('#t-open-label').textContent = name ? `MEMBER · ${name}` : narrow ? 'SCROLL DOWN · ACTIVE CLEARANCE' : 'LOGGED IN · ACTIVE CLEARANCE';
     say(name ? `WELCOME BACK, ${name}.` : 'WELCOME BACK TO THE PACK.', 'ok');
     if (!calm) animate('#t-in .granted', { opacity: [0, 1], translateY: [8, 0], duration: 700, ease: easeOut });
     // right after signing in, hold ACCESS GRANTED for a beat, then close so the panels arrive in view

@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>WOLFRITUAL · Admin</title>
+<meta name="theme-color" content="#020303">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Same palette and type as the public page. Everything here is enforced by Supabase row level security (supabase.sql); the page only hides what you can't use. */
+:root {
+  --void: #020303; --ink: #e6ecee; --ink-on: #020303; --dim: #7a8487; --line: rgba(218, 236, 241, .16);
+  --grid: rgba(218, 236, 241, .075); --blood: #e8291c; --field: rgba(255, 255, 255, .03);
+  --text: 'Chakra Petch', 'Arial Narrow', Arial, sans-serif; --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; min-height: 100vh; color: var(--ink);
+  background: var(--void) radial-gradient(var(--grid) .6px, transparent .9px) 0 0 / 3px 3px;
+  font: 600 12px/1.6 var(--text); letter-spacing: .04em;
+}
+header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); text-transform: uppercase; }
+header b { font: 700 13px var(--mono); }
+main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; display: grid; gap: 28px; }
+h2 { margin: 0 0 12px; font: 700 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+h2 .chip { background: var(--ink); color: var(--ink-on); padding: 0 6px; }
+.panel { border: 1px solid var(--line); padding: 16px; background: rgba(2, 3, 3, .7); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px 16px; }
+.wide { grid-column: 1 / -1; }
+label { display: grid; gap: 4px; font: 700 10px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+label small { font-weight: 500; text-transform: none; letter-spacing: 0; }
+input, textarea, select {
+  font: 500 13px var(--text); color: var(--ink); background: var(--field); border: 1px solid var(--line);
+  padding: 7px 9px; width: 100%; letter-spacing: .02em;
+}
+textarea { min-height: 64px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 1px solid var(--blood); outline-offset: 1px; }
+.check { display: flex; gap: 8px; align-items: center; color: var(--ink); }
+.check input { width: auto; }
+button { font: 700 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; padding: 7px 12px; border: 1px solid var(--line); background: none; color: var(--ink); }
+button.primary { background: var(--ink); color: var(--ink-on); border-color: var(--ink); }
+button.primary:hover { background: var(--blood); border-color: var(--blood); color: #fff; }
+button.danger:hover { border-color: var(--blood); color: var(--blood); }
+button:disabled { opacity: .5; cursor: wait; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.bar .grow { flex: 1; }
+.items { display: grid; gap: 6px; }
+.item { display: grid; grid-template-columns: 2.4em 1fr auto; gap: 6px; align-items: center; }
+.item span { font: 700 11px var(--mono); color: var(--blood); }
+.item button { padding: 6px 9px; }
+.status { font: 600 11px var(--mono); color: var(--dim); text-transform: uppercase; }
+.status.ok { color: #7fd99a; } .status.err { color: var(--blood); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font: 500 12px var(--text); }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font: 700 10px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+td a { color: var(--ink); }
+#login { max-width: 360px; margin: 10vh auto 0; display: grid; gap: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <b>WOLFRITUAL · ADMIN</b>
+  <div class="bar"><span class="status" id="who"></span><a href="./" class="status">← SITE</a><button type="button" id="out" hidden>Sign out</button></div>
+</header>
+
+<form id="login" class="panel" hidden>
+  <h2><span class="chip">ADMIN</span>Sign in</h2>
+  <label>Email<input id="l-email" type="email" autocomplete="email" required></label>
+  <label>Password<input id="l-pass" type="password" autocomplete="current-password" required></label>
+  <button class="primary" type="submit">Sign in</button>
+</form>
+
+<main id="app" hidden>
+  <section class="panel">
+    <h2><span class="chip">PARTY</span>Event details</h2>
+    <div class="bar" style="margin-bottom: 14px;">
+      <select id="pick" aria-label="Choose a party to edit" class="grow"></select>
+      <button type="button" id="new">+ New party</button>
+    </div>
+
+    <form id="party" novalidate>
+      <div class="grid">
+        <label class="wide">Event name<input name="title" required maxlength="80" placeholder="New Moon · Night 08"></label>
+        <label>Theme tag <small>optional, replaces the moon line</small><input name="theme" maxlength="40" placeholder="New Moon"></label>
+        <label>Date<input name="date" type="date" required></label>
+        <label>Doors open<input name="doors" type="time" required></label>
+        <label>Event ends <small>earlier than doors = next day</small><input name="ends" type="time"></label>
+        <label>Venue name<input name="venue" maxlength="80" placeholder="Hangar 9"></label>
+        <label>City<input name="city" maxlength="60" placeholder="Berlin"></label>
+        <label class="wide">Address <small>members get an "open in maps" link from this</small><input name="address" maxlength="160" placeholder="Example Str. 12, 10115 Berlin"></label>
+        <label class="wide">Access / door directions<textarea name="directions" maxlength="300" placeholder="Gate C. Ring the red bell twice."></textarea></label>
+        <label>Entry password / instructions<input name="entry" maxlength="80" placeholder="Say “Lupa” at the gate"></label>
+        <label>Capacity<input name="capacity" type="number" min="0" step="1" placeholder="80"></label>
+        <label>Status <small>upcoming / live / ended is automatic</small>
+          <select name="status"><option value="">Automatic</option><option value="sold_out">Sold out</option><option value="cancelled">Cancelled</option></select>
+        </label>
+        <label class="check wide"><input name="published" type="checkbox" checked> Visible to members <small>(untick for a test or draft party)</small></label>
+      </div>
+
+      <h2 style="margin-top: 22px;"><span class="chip">DRESS CODE</span></h2>
+      <div class="grid">
+        <label class="wide">Dress code title<input name="dress_code" maxlength="80" placeholder="Red and black only"></label>
+      </div>
+      <div class="items" id="dress_notes" style="margin-top: 10px;"></div>
+      <button type="button" data-add="dress_notes" style="margin-top: 8px;">+ Add dress code item</button>
+
+      <h2 style="margin-top: 22px;"><span class="chip">HOUSE RULES</span><span class="status" id="rule-count"></span></h2>
+      <div class="items" id="rules"></div>
+      <button type="button" data-add="rules" style="margin-top: 8px;">+ Add rule</button>
+
+      <h2 style="margin-top: 22px;"><span class="chip">ADMIN NOTES</span><span class="status">only admins see this</span></h2>
+      <textarea name="notes" aria-label="Internal admin notes" maxlength="2000" placeholder="Test party for checking the site…"></textarea>
+
+      <div class="bar" style="margin-top: 18px;">
+        <button class="primary" type="submit" id="save">Save party</button>
+        <button class="danger" type="button" id="del">Delete</button>
+        <span class="status grow" id="p-status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2><span class="chip">MEMBERS</span><span id="m-count" class="status"></span></h2>
+    <div class="bar" style="margin-bottom: 12px;">
+      <input id="m-search" type="search" placeholder="Search name, email or phone" aria-label="Search members" class="grow">
+      <button type="button" id="csv">Download CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Invite</th><th>Joined</th></tr></thead>
+        <tbody id="m-rows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+// Same project and public key as index.html; signing in here also signs you in on the site (same browser storage).
+const SUPABASE_URL = 'https://zhnpzbspxtflcitcxoll.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_7sLSmdKPReOkLK7fChAYzQ_EUgIsA5Z';
+const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm');
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (s) => document.querySelector(s);
+const form = $('#party'), pick = $('#pick'), pStatus = $('#p-status');
+let parties = [], members = [], current = null;
+
+const say = (el, text, kind = '') => { el.textContent = text; el.className = `status grow ${kind}`; };
+const pad2 = (n) => String(n).padStart(2, '0');
+const localDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const localTime = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
+// Times are in this browser's time zone; members see them converted to theirs.
+// shortcut: assumes the admin's computer is set to the venue's time zone; add a time zone field if parties move across zones.
+function toRange(date, doors, ends) {
+  const start = new Date(`${date}T${doors}`);
+  if (!ends) return { starts_at: start.toISOString(), ends_at: null };
+  const end = new Date(`${date}T${ends}`);
+  if (end <= start) end.setDate(end.getDate() + 1); // 22:00 → 05:00 ends the next morning
+  return { starts_at: start.toISOString(), ends_at: end.toISOString() };
+}
+{
+  const r = toRange('2026-11-21', '22:00', '05:00');
+  console.assert(new Date(r.ends_at) - new Date(r.starts_at) === 7 * 36e5, 'ends after midnight rolls to next day');
+}
+
+/* ---------- dynamic lists (dress code items, house rules): numbering is automatic ---------- */
+function addItem(listId, value = '') {
+  const row = document.createElement('div');
+  row.className = 'item';
+  const num = document.createElement('span');
+  const input = Object.assign(document.createElement('input'), { value, maxLength: 120 });
+  input.setAttribute('aria-label', listId === 'rules' ? 'House rule' : 'Dress code item');
+  const rm = Object.assign(document.createElement('button'), { type: 'button', textContent: '×', title: 'Remove' });
+  rm.setAttribute('aria-label', 'Remove this line');
+  rm.onclick = () => { row.remove(); renumber(); };
+  row.append(num, input, rm);
+  $(`#${listId}`).append(row);
+  renumber();
+  return input;
+}
+function renumber() {
+  ['dress_notes', 'rules'].forEach((id) => $(`#${id}`).querySelectorAll('.item span').forEach((s, i) => { s.textContent = id === 'rules' ? pad2(i + 1) : '—'; }));
+  const n = $('#rules').children.length;
+  $('#rule-count').textContent = `${pad2(n)} rules · counted automatically`;
+}
+const readList = (id) => [...$(`#${id}`).querySelectorAll('input')].map((i) => i.value.trim()).filter(Boolean);
+document.querySelectorAll('[data-add]').forEach((b) => { b.onclick = () => addItem(b.dataset.add).focus(); });
+
+/* ---------- party editor ---------- */
+function fill(p, notes = '') {
+  current = p;
+  form.reset();
+  const f = form.elements;
+  const start = p?.starts_at ? new Date(p.starts_at) : null, end = p?.ends_at ? new Date(p.ends_at) : null;
+  ['title', 'theme', 'venue', 'city', 'address', 'directions', 'entry', 'dress_code'].forEach((k) => { f[k].value = p?.[k] ?? ''; });
+  f.capacity.value = p?.capacity ?? '';
+  f.status.value = p?.status ?? '';
+  f.published.checked = p ? p.published !== false : true;
+  f.date.value = start ? localDate(start) : '';
+  f.doors.value = start ? localTime(start) : '';
+  f.ends.value = end ? localTime(end) : '';
+  f.notes.value = notes;
+  ['dress_notes', 'rules'].forEach((id) => { $(`#${id}`).replaceChildren(); (p?.[id] ?? []).forEach((v) => addItem(id, v)); });
+  renumber();
+  $('#del').hidden = !p;
+  say(pStatus, p ? '' : 'NEW PARTY · NOT SAVED YET');
+}
+
+async function loadParties(selectId) {
+  const { data, error } = await sb.from('party').select('*').order('starts_at', { ascending: false });
+  if (error) { say(pStatus, `COULD NOT LOAD PARTIES: ${error.message}`, 'err'); return; }
+  parties = data;
+  pick.replaceChildren(...parties.map((p) => {
+    const d = new Date(p.starts_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Option(`${d} · ${p.title}${p.published === false ? ' (hidden draft)' : ''}`, p.id);
+  }));
+  const chosen = parties.find((p) => p.id === selectId) ?? parties[0];
+  if (chosen) { pick.value = chosen.id; await openParty(chosen); } else fill(null);
+}
+async function openParty(p) {
+  const { data } = await sb.from('party_notes').select('notes').eq('party_id', p.id).maybeSingle();
+  fill(p, data?.notes ?? '');
+}
+pick.onchange = () => openParty(parties.find((p) => String(p.id) === pick.value));
+$('#new').onclick = () => { pick.value = ''; fill(null); form.elements.title.focus(); };
+
+form.onsubmit = async (e) => {
+  e.preventDefault();
+  const f = form.elements;
+  if (!f.title.value.trim()) { say(pStatus, 'GIVE THE EVENT A NAME.', 'err'); f.title.focus(); return; }
+  if (!f.date.value || !f.doors.value) { say(pStatus, 'SET THE DATE AND DOORS-OPEN TIME.', 'err'); (f.date.value ? f.doors : f.date).focus(); return; }
+  const cap = f.capacity.value === '' ? null : Number(f.capacity.value);
+  if (cap != null && !(Number.isInteger(cap) && cap >= 0)) { say(pStatus, 'CAPACITY MUST BE A WHOLE NUMBER.', 'err'); f.capacity.focus(); return; }
+  const text = (k) => f[k].value.trim() || null;
+  const row = {
+    title: f.title.value.trim(), theme: text('theme'), venue: text('venue'), city: text('city'), address: text('address'),
+    directions: text('directions'), entry: text('entry'), dress_code: text('dress_code'), capacity: cap,
+    status: f.status.value || null, published: f.published.checked,
+    dress_notes: readList('dress_notes'), rules: readList('rules'),
+    info: null, // old public info line; internal notes now live in party_notes
+    ...toRange(f.date.value, f.doors.value, f.ends.value),
+  };
+  $('#save').disabled = true;
+  say(pStatus, 'SAVING…');
+  const q = current ? sb.from('party').update(row).eq('id', current.id) : sb.from('party').insert(row);
+  const { data, error } = await q.select().single();
+  if (!error) {
+    const notes = f.notes.value.trim();
+    const n = notes
+      ? await sb.from('party_notes').upsert({ party_id: data.id, notes })
+      : await sb.from('party_notes').delete().eq('party_id', data.id);
+    await loadParties(data.id); // reloads the form, which clears the status line, so report after
+    if (n.error) say(pStatus, `PARTY SAVED, NOTES FAILED: ${n.error.message}`, 'err');
+    else say(pStatus, row.published ? 'SAVED · LIVE FOR MEMBERS' : 'SAVED · HIDDEN DRAFT', 'ok');
+  } else say(pStatus, `NOT SAVED: ${error.message}`, 'err');
+  $('#save').disabled = false;
+};
+
+$('#del').onclick = async () => {
+  if (!current || !confirm(`Delete “${current.title}” for good? This can't be undone.`)) return;
+  const { error } = await sb.from('party').delete().eq('id', current.id);
+  if (error) { say(pStatus, `NOT DELETED: ${error.message}`, 'err'); return; }
+  await loadParties();
+  say(pStatus, 'DELETED.', 'ok');
+};
+
+/* ---------- members ---------- */
+const fullName = (m) => [m.first_name, m.last_name].filter(Boolean).join(' ');
+function showMembers() {
+  const q = $('#m-search').value.trim().toLowerCase();
+  const list = members.filter((m) => !q || [fullName(m), m.email, m.phone].join(' ').toLowerCase().includes(q));
+  $('#m-count').textContent = q ? `${list.length} of ${members.length}` : `${members.length} total`;
+  $('#m-rows').replaceChildren(...list.map((m) => {
+    const tr = document.createElement('tr');
+    const cell = (text, href) => {
+      const td = document.createElement('td');
+      if (text && href) td.append(Object.assign(document.createElement('a'), { href, textContent: text }));
+      else td.textContent = text || '—';
+      return td;
+    };
+    tr.append(
+      cell(fullName(m)), cell(m.email, m.email && `mailto:${m.email}`), cell(m.phone, m.phone && `tel:${m.phone.replace(/[^\d+]/g, '')}`),
+      cell(m.invite), cell(new Date(m.created_at).toLocaleDateString('en-GB')),
+    );
+    return tr;
+  }));
+}
+async function loadMembers() {
+  const { data, error } = await sb.from('members').select('*').order('created_at', { ascending: false });
+  if (error) { $('#m-count').textContent = `COULD NOT LOAD: ${error.message}`; return; }
+  members = data;
+  showMembers();
+}
+$('#m-search').oninput = showMembers;
+
+// a leading = @ (or + - not followed by a phone number) would run as a formula in Excel, so it gets a ' prefix
+const csvCell = (v) => {
+  let s = String(v ?? '');
+  if (/^[=@\t\r]/.test(s) || /^[+-](?![\d\s()-]*$)/.test(s)) s = `'${s}`;
+  return `"${s.replace(/"/g, '""')}"`;
+};
+console.assert(csvCell('+49 151 2345') === '"+49 151 2345"' && csvCell('=HYPERLINK(1)') === `"'=HYPERLINK(1)"` && csvCell('a"b') === '"a""b"', 'csv escaping');
+$('#csv').onclick = () => {
+  const rows = [['First name', 'Last name', 'Email', 'Phone', 'Invite', 'Joined'],
+    ...members.map((m) => [m.first_name, m.last_name, m.email, m.phone, m.invite, m.created_at?.slice(0, 10)])];
+  const blob = new Blob(['﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `wolfritual-members-${localDate(new Date())}.csv` });
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/* ---------- auth: only accounts in public.admins get past this ---------- */
+$('#login').onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = e.submitter; btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $('#l-email').value.trim(), password: $('#l-pass').value });
+  btn.disabled = false;
+  if (error) alert(error.message);
+};
+$('#out').onclick = () => sb.auth.signOut();
+
+async function render(user) {
+  $('#out').hidden = !user;
+  $('#who').textContent = user?.email ?? '';
+  $('#login').hidden = !!user;
+  $('#app').hidden = true;
+  if (!user) return;
+  const { data: ok, error } = await sb.rpc('is_admin');
+  if (error || !ok) {
+    $('#who').textContent = error?.code === 'PGRST202'
+      ? 'ADMIN SQL NOT RUN YET · RUN THE ADMIN SECTION OF SUPABASE.SQL'
+      : `${user.email} · NOT AN ADMIN`;
+    return;
+  }
+  $('#app').hidden = false;
+  await Promise.all([loadParties(), loadMembers()]);
+}
+let last;
+sb.auth.onAuthStateChange((_e, session) => {
+  const id = session?.user?.id ?? null;
+  if (id === last) return; // token refreshes shouldn't wipe a half-edited form
+  last = id;
+  setTimeout(() => render(session?.user ?? null), 0);
+});
+</script>
+</body>
+</html>

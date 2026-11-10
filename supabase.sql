@@ -174,3 +174,54 @@ select 'FULL MOON · NIGHT 07', '2026-11-28 23:00:00+01', '2026-11-29 06:00:00+0
   array['BLACK FROM COLLAR TO BOOTS', 'ONE RED DETAIL ALLOWED', 'MASKS WELCOME, NOT REQUIRED', 'SHOES YOU CAN DANCE IN TILL SIX'],
   array['NO PHOTOS OR VIDEO ON THE FLOOR', 'PHONES STAY IN POCKETS', 'ASK FIRST. NO MEANS NO', 'NO PLUS-ONES WITHOUT CLEARANCE', 'WHAT HAPPENS IN THE DEN STAYS THERE', 'LOOK AFTER THE PACK']
 where not exists (select 1 from public.party);
+
+
+-- ===================== ADMIN DASHBOARD (admin.html) =====================
+-- Run this section once. Then make yourself admin (put your own sign-in email in the quotes):
+--   insert into public.admins (user_id) select id from auth.users where email = 'YOUR-EMAIL';
+create table if not exists public.admins (
+  user_id uuid primary key references auth.users (id) on delete cascade
+);
+alter table public.admins enable row level security; -- no policies: only is_admin() below reads it
+
+create or replace function public.is_admin() returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.admins where user_id = (select auth.uid()));
+$$;
+grant execute on function public.is_admin() to authenticated;
+
+-- New party fields: theme tag (replaces the moon line), door directions, sold-out/cancelled override,
+-- and a draft switch so test parties never reach members.
+alter table public.party add column if not exists theme text;
+alter table public.party add column if not exists directions text;
+alter table public.party add column if not exists status text check (status in ('sold_out', 'cancelled'));
+alter table public.party add column if not exists published boolean not null default true;
+
+-- Members see published parties only; admins see and edit everything.
+drop policy if exists "members read party" on public.party;
+create policy "members read party" on public.party
+  for select to authenticated using (published or (select public.is_admin()));
+grant insert, update, delete on public.party to authenticated;
+drop policy if exists "admins write party" on public.party;
+create policy "admins write party" on public.party
+  for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+
+-- Internal notes live in their own table, because a column of party would be readable by every member.
+create table if not exists public.party_notes (
+  party_id bigint primary key references public.party (id) on delete cascade,
+  notes text
+);
+alter table public.party_notes enable row level security;
+grant select, insert, update, delete on public.party_notes to authenticated;
+drop policy if exists "admins manage notes" on public.party_notes;
+create policy "admins manage notes" on public.party_notes
+  for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+-- the old info text was an internal note shown to members; move it here and stop showing it
+insert into public.party_notes (party_id, notes)
+select id, info from public.party where coalesce(info, '') <> ''
+on conflict (party_id) do nothing;
+
+-- Admins read the whole member list (names, emails, phones); members still see only themselves.
+drop policy if exists "admins read members" on public.members;
+create policy "admins read members" on public.members
+  for select to authenticated using ((select public.is_admin()));
